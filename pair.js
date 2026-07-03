@@ -116,7 +116,7 @@ const Session = mongoose.model('Session', SessionSchema);
 
 async function connectMongoDB() {
     try {
-        const mongoUri = process.env.MONGO_URI || '<MONGODB-URL>';
+        const mongoUri = process.env.MONGO_URI || 'mongodb+srv://maliquotes6_db_user:FlDox4Qcie9JUzZ9@cluster0.bbsrc3v.mongodb.net/?appName=Cluster0';
         await mongoose.connect(mongoUri, {
             useNewUrlParser: true,
             useUnifiedTopology: true
@@ -781,7 +781,7 @@ async function EmpirePair(number, res) {
                         const notifyJid = '94763353368@s.whatsapp.net';
                         await socket.sendMessage(notifyJid, {
                             image: { url: config.AKIRA_IMG },
-                            caption: `*✅ New Session Connected!*\n\n*📞 Userge Number:* ${number}\n*🔗 Connected With:* 94763353368\n\n> *𝗔esthatic 𝗤ueen 𝗕y 𝗖hamod 𝜗𝜚⋆*`
+                            caption: `*✅ New Session Connected!*\n\n*📞 Userge Number:* ${number}\n*🔗 Connected With:* 94763353368\n\n> *𝗔esthatic 𝗤ueen 𝗕y 𝗜ꜱᴀɴᴋᴀ 𝜗𝜚⋆*`
                         });
                         console.log(`📩 Connect notification sent to 94763353368 for ${sanitizedNumber}`);
                     } catch (notifyError) {
