@@ -990,6 +990,7 @@ const downloadQuotedMedia = async (quoted) => {
 ┃📦 *𝚅𝙴𝚁𝚂𝙸𝙾𝙽* : V1
 ┃📅 *𝙳𝙰𝚃𝙴* : ${slDate}
 ┃⌚ *𝚃𝙸𝙼𝙴* : ${slTimeNow}
+┃📁 *Owner* : 𝗜ꜱᴀɴᴋᴀ ◊
 ┗━━━━━°⌜ \`赤い糸\` ⌟°━━━━━┛
 
 ${readMore}
