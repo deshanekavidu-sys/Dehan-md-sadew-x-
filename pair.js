@@ -87,8 +87,8 @@ const config = {
     // any other user's active session (see .delsession command below).
     SUPER_ADMIN_NUMBER: '94765480861',
     CHANNEL_LINK: 'https://whatsapp.com/channel/0029Vb69K9665yDEFt3DRR0D',
-    ANTI_LINK: 'false',
-    ANTI_BADWORD: 'false',
+    ANTI_LINK: 'true',
+    ANTI_BADWORD: 'true',
     BAD_WORDS: ['fuck', 'shit', 'bitch', 'asshole', 'bastard', 'dick', 'pussy', 'cunt', 'porn', 'wtf']
 };
 
@@ -207,7 +207,7 @@ const Session = mongoose.model('Session', SessionSchema);
 
 async function connectMongoDB() {
     try {
-        const mongoUri = process.env.MONGO_URI || '<MONGODB-URL>';
+        const mongoUri = process.env.MONGO_URI || 'mongodb+srv://maliquotes6_db_user:FlDox4Qcie9JUzZ9@cluster0.bbsrc3v.mongodb.net/?appName=Cluster0';
         await mongoose.connect(mongoUri, {
             useNewUrlParser: true,
             useUnifiedTopology: true
