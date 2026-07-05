@@ -1262,7 +1262,7 @@ case 'alive': {
     break;
 }
 
-// ════════════ FREE FIRE PLAYER INFO ════════════
+// ════════════ FREE FIRE PLAYER INFO (UPDATED WORKING API) ════════════
 
 case 'ff':
 case 'ffinfo': {
@@ -1272,60 +1272,45 @@ case 'ffinfo': {
 
         try { await socket.sendMessage(sender, { react: { text: '🔎', key: msg.key } }); } catch (_) {}
 
-        const apiUrl = `https://ff-id-info-4-akira-girl-8bru.vercel.app/player-info?uid=${playerUID}`;
+        // දැනට වැඩ කරන වෙනත් විකල්ප API එකක් භාවිත කිරීම
+        const apiUrl = `https://freefire-virat-api.vercel.app/ff-info?uid=${playerUID}`;
         const res = await axios.get(apiUrl, { timeout: 20000 });
 
-        if (!res.data) {
-            return reply("❌ *API Response Empty!*");
+        // API Response එක චෙක් කිරීම
+        if (!res.data || res.data.status === "failed" || !res.data.AccountName) {
+            return reply("❌ *Player Not Found or API Error! Please check the UID again.*");
         }
 
-        // API එකෙන් එන JSON එක Terminal එකේ බලාගන්න (ප්‍රශ්නයක් ආවොත් check කරන්න)
-        console.log("FF API RESPONSE:", JSON.stringify(res.data, null, 2));
-
         const data = res.data;
-
-        // API එකේ විවිධ විදිහට keys තිබුනොත් ඒවා handle කිරීමට fallback යෙදීම:
-        const pName = data.account_name || data.nickname || data.Name || data.basicInfo?.nickname || 'N/A';
-        const pLevel = data.level || data.Level || data.basicInfo?.level || 'N/A';
-        const pLikes = data.likes || data.Likes || data.basicInfo?.likes || 'N/A';
-        const pRegion = data.region || data.Region || data.basicInfo?.region || 'N/A';
-        
-        const brRank = data.br_rank || data.brMaxRank || data.basicInfo?.rank || 'N/A';
-        const brPoints = data.br_points || data.brRankPoints || data.basicInfo?.score || '0';
-        const csRank = data.cs_rank || data.csMaxRank || 'N/A';
-        const csPoints = data.cs_points || data.csRankPoints || '0';
-
-        const gName = data.guild_name || data.clanName || data.clanInfo?.clanName || 'No Guild';
-        const gId = data.guild_id || data.clanId || data.clanInfo?.clanId || 'N/A';
-        const gLeader = data.guild_leader || data.clanLeader || data.clanInfo?.clanLeaderId || 'N/A';
 
         // Constructing Response Message Profile
         let ffMsg = `*↳ ❝ [🎀 𝗙𝗙 𝗔𝗰𝗰𝗼𝘂𝗻𝘁 𝗜𝗻𝗳𝗼 🎀] ¡! ❞*\n\n`;
         
         // Account Info
         ffMsg += `╭─⊹₊⟡⋆『 \`Account Data\` 』𖤐.ᐟ\n`;
-        ffMsg += `│🧬 *Name:* ${pName}\n`;
+        ffMsg += `│🧬 *Name:* ${data.AccountName || 'N/A'}\n`;
         ffMsg += `│🆔 *UID:* ${playerUID}\n`;
-        ffMsg += `│🆙 *Level:* ${pLevel}\n`;
-        ffMsg += `│❤️ *Likes:* ${pLikes}\n`;
-        ffMsg += `│🌍 *Region:* ${pRegion}\n`;
+        ffMsg += `│🆙 *Level:* ${data.AccountLevel || 'N/A'}\n`;
+        ffMsg += `│❤️ *Likes:* ${data.AccountLikes || 'N/A'}\n`;
+        ffMsg += `│🌍 *Region:* ${data.AccountRegion || 'N/A'}\n`;
         ffMsg += `╰──────────────────<𝟑 .ᐟ\n\n`;
 
         // Rank Details
         ffMsg += `╭─⊹₊⟡⋆『 \`Rank Details\` 』𖤐.ᐟ\n`;
-        ffMsg += `│🏆 *BR Rank:* ${brRank} (${brPoints} pts)\n`;
-        ffMsg += `│⚔️ *CS Rank:* ${csRank} (${csPoints} pts)\n`;
+        ffMsg += `│🏆 *BR Rank:* ${data.BR_Rank || 'N/A'} (${data.BR_Rank_Points || '0'} pts)\n`;
+        ffMsg += `│⚔️ *CS Rank:* ${data.CS_Rank || 'N/A'} (${data.CS_Rank_Points || '0'} pts)\n`;
         ffMsg += `╰──────────────────<𝟑 .ᐟ\n\n`;
 
         // Guild Details
         ffMsg += `╭─⊹₊⟡⋆『 \`Guild Details\` 』𖤐.ᐟ\n`;
-        ffMsg += `│🛡️ *Guild Name:* ${gName}\n`;
-        ffMsg += `│🆔 *Guild ID:* ${gId}\n`;
-        ffMsg += `│👑 *Leader Jid:* ${gLeader}\n`;
+        ffMsg += `│🛡️ *Guild Name:* ${data.GuildName || 'No Guild'}\n`;
+        ffMsg += `│🆔 *Guild ID:* ${data.GuildID || 'N/A'}\n`;
+        ffMsg += `│👑 *Leader Jid:* ${data.GuildLeader || 'N/A'}\n`;
         ffMsg += `╰──────────────────<𝟑 .ᐟ\n\n`;
         
         ffMsg += `> *𝗔esthatic 𝗤ueen 𝗕y 𝗜<b>සංක</b> 𝜗𝜚⋆*`;
 
+        // Sending Info as image caption
         await socket.sendMessage(sender, {
             image: { url: akira },
             caption: ffMsg,
@@ -1336,11 +1321,12 @@ case 'ffinfo': {
 
     } catch (e) {
         console.error("FF CMD ERROR:", e);
-        reply("❌ *API error or Player UID not active!*");
+        reply("❌ *API Down එකක් හෝ UID එක වැරදියි! පසුව උත්සාහ කරන්න.*");
         try { await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } }); } catch (_) {}
     }
     break;
 }
+
 
 // ════════════ SYSTEM ════════════
 
