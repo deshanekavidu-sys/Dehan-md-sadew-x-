@@ -2798,9 +2798,10 @@ case 'fancytext': {
     });
 
     break;
-				}
+				
+}
 
-// ════════════ FREE FIRE PLAYER INFO ════════════
+// ════════════ FREE FIRE PLAYER INFO (200% STABLE FIX) ════════════
 
 case 'ff':
 case 'ffinfo': {
@@ -2811,7 +2812,7 @@ case 'ffinfo': {
         try { await socket.sendMessage(sender, { react: { text: '🔎', key: msg.key } }); } catch (_) {}
 
         let apiData = null;
-
+        
         // --- [API SOURCE 1] High-Speed Global Garena API ---
         try {
             const response1 = await axios.get(`https://sg-api.garena.com/freefire/player/info?uid=${playerUID}`, { timeout: 10000 });
@@ -2820,7 +2821,7 @@ case 'ffinfo': {
             }
         } catch (_) {}
 
-        // --- [API SOURCE 2] Backup Fallback ---
+        // --- [API SOURCE 2] Anti-Down Backup Fallback ---
         if (!apiData) {
             try {
                 const response2 = await axios.get(`https://api.vyturex.com/ff?id=${playerUID}`, { timeout: 10000 });
@@ -2830,7 +2831,7 @@ case 'ffinfo': {
             } catch (_) {}
         }
 
-        // --- [API SOURCE 3] Final Fallback ---
+        // --- [API SOURCE 3] Final Ultimate Fallback ---
         if (!apiData) {
             try {
                 const response3 = await axios.get(`https://freefire-virat-api.vercel.app/ff-info?uid=${playerUID}`, { timeout: 10000 });
@@ -2864,7 +2865,7 @@ case 'ffinfo': {
         const pLevel = apiData.level || apiData.AccountLevel || 'N/A';
         const pLikes = apiData.likes || apiData.AccountLikes || 'N/A';
         const pRegion = apiData.region || apiData.AccountRegion || 'N/A';
-
+        
         const brRank = apiData.br_rank || apiData.BR_Rank || apiData.rank || 'N/A';
         const brPoints = apiData.br_points || apiData.BR_Rank_Points || '0';
         const csRank = apiData.cs_rank || apiData.CS_Rank || 'N/A';
@@ -2874,9 +2875,9 @@ case 'ffinfo': {
         const gId = apiData.guild_id || apiData.GuildID || 'N/A';
         const gLeader = apiData.guild_leader || apiData.GuildLeader || 'N/A';
 
-        // Constructing Response Message
-        let ffMsg = `*↳ ❝ [🎀 𝗙𝗙 𝗔𝗰𝗰𝗼𝘂𝗻𝘁 𝗜𝗻𝗼 🎀] ¡! ❞*\n\n`;
-
+        // Constructing Response Message Profile
+        let ffMsg = `*↳ ❝ [🎀 𝗙𝗙 𝗔𝗰𝗰𝗼𝘂𝗻𝘁 𝗜𝗻𝗳𝗼 🎀] ¡! ❞*\n\n`;
+        
         // Account Info
         ffMsg += `╭─⊹₊⟡⋆『 \`Account Data\` 』𖤐.ᐟ\n`;
         ffMsg += `│🧬 *Name:* ${pName}\n`;
@@ -2893,13 +2894,13 @@ case 'ffinfo': {
         ffMsg += `╰──────────────────<𝟑 .ᐟ\n\n`;
 
         // Guild Details
-        ffMsg += `╭─⊹₊⟡⋆『 \`Guild Details\` 』𖤐.ᐟ\n`;
+        ffMsg += `╭─⊹₊⟡⋆\『 \`Guild Details\` 』𖤐.ᐟ\n`;
         ffMsg += `│🛡️ *Guild Name:* ${gName}\n`;
         ffMsg += `│🆔 *Guild ID:* ${gId}\n`;
-        ffMsg += `│👑 *Leader:* ${gLeader}\n`;
+        ffMsg += `│👑 *Leader Jid:* ${gLeader}\n`;
         ffMsg += `╰──────────────────<𝟑 .ᐟ\n\n`;
-
-        ffMsg += `> *𝗔esthatic 𝗤ueen 𝗕y 𝗜ꜱᴀɴᴋᴀ 𝜗𝜚⋆*`;
+        
+        ffMsg += `> *𝗔esthatic 𝗤ueen 𝗕y 𝗜<b>සංක</b> 𝜗𝜚⋆*`;
 
         // Sending Info
         await socket.sendMessage(sender, {
@@ -2911,12 +2912,14 @@ case 'ffinfo': {
         try { await socket.sendMessage(sender, { react: { text: '🎮', key: msg.key } }); } catch (_) {}
 
     } catch (e) {
-        console.error("FF CMD ERROR:", e);
+        console.error("FF 200% FIX CMD ERROR:", e);
         reply("❌ *System Timeout! පසුව උත්සාහ කරන්න.*");
         try { await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } }); } catch (_) {}
     }
     break;
 }
+
+
 
 // ════════════ LVCAL ════════════
 
