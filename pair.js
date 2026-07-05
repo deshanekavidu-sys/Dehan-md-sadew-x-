@@ -126,6 +126,7 @@ const COMMANDS_REGISTRY = [
     { cmd: 'pin', desc: 'ᴅᴏᴡɴʟᴏʀᴅ ᴘɪɴᴛᴇʀᴇꜱᴛ ᴠɪᴅᴇᴏ/ɪᴍɢ', category: 'Download' },
 
     { cmd: 'vv', desc: 'ᴅᴇᴄʀʏᴘᴛ ᴏɴᴇ ᴛɪᴍᴇ ꜰɪʟᴇ', category: 'Tools' },
+	{ cmd: 'mod', desc: 'ᴍᴏᴅ ᴀᴘᴋ ᴅᴏᴡɴʟᴏᴀᴅ', category: 'Tools' },
     { cmd: 'sticker', desc: 'ᴄᴏɴᴠᴇᴛʀ ᴛᴏ ꜱᴛᴋ', category: 'Tools' },
     { cmd: 'fancy', desc: 'ᴄᴏɴᴠᴇᴛ ᴛᴏ ꜰᴀɴᴄʏ ᴛᴇxᴛ', category: 'Tools' },
     { cmd: 'getdp', desc: 'ɢᴇᴛ ᴡʜ ᴘʀᴏꜰɪʟᴇ 𝗉ʜᴏᴛᴏ', category: 'Tools' },
@@ -1461,8 +1462,73 @@ case 'ytmp3': {
 }
 
 					
-// ════════════ VIDEO ════════════
+// ════════════ ꜱᴜʙᴅʟ ════════════
+case 'subdl':
+case 'sinhalasubdl': {
+  // පරිශීලකයා සෙවිය යුතු නම ඇතුළත් කර නැත්නම්
+  if (!text) return await socket.sendMessage(sender, { text: '✍️ කරුණාකර බාගත යුතු චිත්‍රපටයේ හෝ කතාමාලාවේ නම ඇතුළත් කරන්න! (උදා: .subdl iron man)' }, { quoted: msg });
 
+  // පියවර 1: සෙවීම ආරම්භ කල බව හැඟවීමට රියැක්ෂන් එකක් දානවා
+  try { await socket.sendMessage(sender, { react: { text: '🔍', key: msg.key } }); } catch (_) {}     
+  
+  try {
+    // 1. ප්‍රථමයෙන් සර්ච් API එක මඟින් ලින්ක් එක සොයාගැනීම
+    const searchResponse = await fetch(`https://api.zanta-mini.store/api/sinhalasub/search?apiKey=zan_w8lSd1pK_t79f2pa52p&text=${encodeURIComponent(text)}`);
+    const searchJson = await searchResponse.json();
+
+    if (!searchJson.status || !searchJson.results || searchJson.results.length === 0) {
+      return await socket.sendMessage(sender, { text: '❌ එම නමින් කිසිදු උපසිරැසියක් සොයාගත නොහැකි විය!' }, { quoted: msg });
+    }
+
+    // පළමු ප්‍රතිඵලය සහ එහි ලින්ක් එක ලබාගැනීම
+    const firstMovie = searchJson.results[0];
+    const movieUrl = firstMovie.link || firstMovie.url;
+    const movieTitle = firstMovie.title || firstMovie.name;
+
+    if (!movieUrl) {
+      return await socket.sendMessage(sender, { text: '❌ චිත්‍රපටයේ ලින්ක් එක ලබා ගැනීමට නොහැකි විය!' }, { quoted: msg });
+    }
+
+    // පියවර 2: ඩවුන්ලෝඩ් එක පටන් ගත් බව හැඟවීමට රියැක්ෂන් එක වෙනස් කරනවා
+    try { await socket.sendMessage(sender, { react: { text: '📥', key: msg.key } }); } catch (_) {}
+
+    // 2. සොයාගත් ලින්ක් එක ඩවුන්ලෝඩ් API එකට යැවීම
+    const dlResponse = await fetch(`https://api.zanta-mini.store/api/sinhalasub/dl?apiKey=zan_w8lSd1pK_t79f2pa52p&text=${encodeURIComponent(movieUrl)}`);
+    const dlJson = await dlResponse.json();
+
+    // ඩවුන්ලෝඩ් ලින්ක් එකක් ලැබී ඇත්දැයි බැලීම (API response එක අනුව dlJson.result හෝ dlJson.url විය හැක)
+    const downloadLink = dlJson.downloadLink || dlJson.result || dlJson.url || dlJson.link;
+
+    if (!dlJson.status || !downloadLink) {
+      return await socket.sendMessage(sender, { text: `❌ '${movieTitle}' බාගත කිරීමේ ලින්ක් එකක් සොයාගත නොහැකි විය.` }, { quoted: msg });
+    }
+
+    // 3. වීඩියෝව හෝ ඩොකියුමන්ට් එකක් ලෙස ෆයිල් එක යූසර්ට සෙන්ඩ් කිරීම
+    // (ෆිල්ම් එකේ සයිස් එක විශාල නම් document එකක් ලෙස යැවීම වඩාත් සුදුසුයි)
+    await socket.sendMessage(sender, {
+      document: { url: downloadLink },
+      mimetype: 'video/mp4',
+      fileName: `${movieTitle}.mp4`,
+      caption: `*↳ ❝ [🎀 𝗦𝗶𝗻𝗵𝗮𝗹𝗮 𝗦𝘂𝗯 𝗗𝗼𝘄𝗻𝗹𝗼𝗮𝗱𝗲𝗿 🎀] ❞*\n\n` +
+               `*🎬 Title:* ${movieTitle}\n` +
+               `*🔗 Source:* SinhalaSub\n\n` +
+               `> *𝗔esthatic 𝗤ueen 𝗕y 𝗜𝘀𝗮𝗻𝗸𝗮 𝜗𝜚⋆*`,
+      contextInfo: arabianCtx()
+    }, { quoted: msg });
+
+    // සාර්ථකව නිම වූ පසු ✅ රියැක්ෂන් එකක් දානවා
+    try { await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } }); } catch (_) {}     
+
+  } catch (err) {
+    console.error(err);
+    await socket.sendMessage(sender, { text: '⚠️ මෙම චිත්‍රපටය බාගත කිරීමේදී පද්ධති දෝෂයක් සිදු විය!' }, { quoted: msg });
+  }
+
+  break;
+}
+
+// ════════════ ᴠɪᴅᴇᴏ ════════════
+					
 case 'video':
 case 'ytmp4':
 case 'playvid': {
