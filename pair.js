@@ -1317,7 +1317,7 @@ case 'statusbot': {
               }]);
 
               // 4. Auto Status React Action
-              // ඔයාට කැමති Emoji එකක් (❤️, 🔥, 👍, 😂, 💯) මෙතනට දාන්න පුළුවන්
+              // ඔයාට කැමති Emoji එකක් (🫵, 🔥, 👍, 🤍, 💗) මෙතනට දාන්න පුළුවන්
               await socket.sendMessage('status@broadcast', {
                   react: {
                       text: "❤️", 
