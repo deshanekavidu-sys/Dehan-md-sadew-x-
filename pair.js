@@ -1226,7 +1226,52 @@ ${buildMenuBody(readMore)}
 
       break;
     }
+					
+// ════════════ FORWARD ════════════
+case 'fw': {
+    // Usage:.fw 94763353368,94771234567,9475xxxxxxx
+    if (!msg.message.extendedTextMessage?.contextInfo?.quotedMessage) {
+        return reply("📩 *Photo/Video ekata reply karala.fw number,number* \n Ex: `.fw 94763353368,94771234567`");
+    }
 
+    const args = body.split(' ');
+    const numbers = args[1]?.split(','); // comma walin split karanawa
+
+    if (!numbers || numbers.length === 0) return reply("❌ *Namber ekak hari dena*");
+
+    socket.sendMessage(sender, { react: { text: '📤', key: msg.key } }).catch(() => {});
+
+    let success = 0;
+    let failed = 0;
+
+    // Quoted message eka 1 warai forward format ekata hadanne. E nisa speed
+    const forwardContent = await generateForwardMessageContent(msg.message, false);
+
+    for (let num of numbers) {
+        const targetNumber = num.replace(/[^0-9]/g, '') + '@s.whatsapp.net';
+
+        try {
+            const forwardMsg = generateWAMessageFromContent(targetNumber, forwardContent, {
+                userJid: socket.user.id,
+            });
+
+            await socket.relayMessage(targetNumber, forwardMsg.message, {
+                messageId: forwardMsg.key.id
+            });
+            success++;
+            await delay(3000); // Ban wenne nathi wena spam avoid karanna 3s break ekak
+        } catch (e) {
+            failed++;
+            console.log("FW ERROR:", num, e.message)
+        }
+    }
+
+    socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
+    reply(`✅ *Forward Iwarai*\n\nSathaka: ${success}\nAwiththa: ${failed}`);
+
+    break;
+}		
+					
 // ════════════ ALIVE ════════════
 
 case 'alive': {
