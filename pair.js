@@ -118,6 +118,8 @@ const COMMANDS_REGISTRY = [
     { cmd: 'ping', desc: 'ɢᴇᴛ ʙᴏᴛ ꜱᴘᴇᴇᴅ', category: 'Main' },
     { cmd: 'alive', desc: 'ᴄʜᴇᴄᴋ ʙᴏᴛ ᴀʟɪᴠᴇ', category: 'Main' },
     { cmd: 'owner', desc: 'ɢᴇᴛ ᴏᴡɴᴇʀ ɪɴꜰᴏ', category: 'Main' },
+	{ cmd: 'news', desc: 'ɢᴇᴛ ɴᴇᴡꜱ', category: 'Main' },
+	{ cmd: 'weather', desc: 'ɢᴇᴛ ᴡᴇᴀᴛʜᴇʀ', category: 'Main' },
     { cmd: 'pair', desc: 'ɢᴇᴛ ᴘᴀɪʀɪɴɢ ᴄᴏᴅᴇ ꜰᴏʀ ᴀ ɴᴜᴍʙᴇʀ', category: 'Main' },
 
     { cmd: 'song', desc: 'ᴅᴏᴡɴʟᴏʀᴅ ꜱᴏɴɢ', category: 'Download' },
@@ -1233,8 +1235,14 @@ case 'news': {
         const topic = body.split(' ').slice(1).join(' ') || 'Sri Lanka';
         await socket.sendMessage(sender, { react: { text: '📰', key: msg.key } }).catch(() => {});
 
-        const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(topic)} AND Sri Lanka&language=en&sortBy=publishedAt&pageSize=5&apiKey=15d4000cd98b4ec59387a8bbb1bb5372`;
+        const API_KEY = '15d4000cd98b4ec59387a8bbb1bb5372';
+        const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(topic)} AND Sri Lanka&language=en&sortBy=publishedAt&pageSize=5&apiKey=${API_KEY}`;
+
         const { data } = await axios.get(url, { timeout: 15000 });
+
+        if(data.status!== 'ok') {
+            return reply(`❌ *API Error: ${data.message || 'Key එක check කරන්න'}*`);
+        }
 
         if(data.articles.length === 0) {
             return reply(`❌ *${topic} gana අලුත් News හොයාගන්න බැරි උනා*`);
@@ -1263,18 +1271,23 @@ case 'news': {
                     caption: newsText
                 }, { quoted: msg });
             } else {
-                // Photo nathnam text witharak
                 await socket.sendMessage(sender, { text: newsText }, { quoted: msg });
             }
 
-            await delay(1500); // Spam wenna nathi wenna 1.5s delay
+            await delay(1500); // Spam wenna nathi wenna
         }
 
         await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
 
     } catch (e) {
-        console.log("NEWS ERROR:", e.message);
-        reply("❌ *News ගන්න බැරි උනා. API Key එක හරිද බලන්න*");
+        console.log("NEWS ERROR:", e);
+        if(e.response?.status === 401) {
+            reply("❌ *API Key එක අවුල්. newsapi.org eke key eka check කරන්න*");
+        } else if(e.response?.status === 429) {
+            reply("❌ *අදට News limit ඉවරයි. හෙට ආයෙ try කරන්න*");
+        } else {
+            reply("❌ *News ගන්න බැරි උනා. Internet check කරන්න*");
+        }
     }
     break;
 }
