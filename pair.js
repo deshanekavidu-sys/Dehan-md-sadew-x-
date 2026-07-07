@@ -1233,7 +1233,7 @@ case 'news': {
         const topic = body.split(' ').slice(1).join(' ') || 'Sri Lanka';
         await socket.sendMessage(sender, { react: { text: '📰', key: msg.key } }).catch(() => {});
 
-        const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(topic)} AND Sri Lanka&language=en&sortBy=publishedAt&pageSize=5&apiKey=YOUR_API_KEY`;
+        const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(topic)} AND Sri Lanka&language=en&sortBy=publishedAt&pageSize=5&apiKey=15d4000cd98b4ec59387a8bbb1bb5372`;
         const { data } = await axios.get(url, { timeout: 15000 });
 
         if(data.articles.length === 0) {
