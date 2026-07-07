@@ -1231,15 +1231,14 @@ ${buildMenuBody(readMore)}
 		
 // ════════════ IMAGINE ════════════
 
-  case 'imagine': {
+    case 'imagine': {
         try {
             let prompt = body.split(' ').slice(1).join(' ');
-            if (!prompt) return reply("❌ *Prompt එකක් ඇතුලත් කරන්න.*\nEx: `.imagine A futuristic sports car`");
+            if (!prompt) return reply("❌ *Prompt එකක් ඇතුලත් කරන්න.*\nEx: `.imagine A luxury sports car`");
 
-            // Reaction එකක් දානවා
             await socket.sendMessage(sender, { react: { text: '🎨', key: msg.key } }).catch(() => {});
 
-            // Premium 90s photography look එකක් එන්න prompt එක auto-enhance කරනවා
+            // Premium 90s photography look එකක් එන්න auto-enhance කිරිම
             const enhancedPrompt = `${prompt}, 1990s vintage cinematic film aesthetic, highly detailed portrait, shot on Leica SL2 camera, 8k resolution, photorealistic, premium luxury style`;
 
             // Stability AI API Request
@@ -1258,29 +1257,22 @@ ${buildMenuBody(readMore)}
                 timeout: 20000
             });
 
-            // Base64 image එක temporary file එකක් විදිහට save කරගන්නවා
+            // Base64 image එක save කරගන්නවා
             const base64Buffer = Buffer.from(response.data.artifacts[0].base64, 'base64');
-            const imgPath = `./temp_${Date.now()}.png`;
+            const imgPath = `./temp_${sender.split('@')[0]}_${Date.now()}.png`;
             fs.writeFileSync(imgPath, base64Buffer);
 
-            let captionText = `✨ *Prompt:* ${prompt}\n\n`;
-            captionText += `📸 *Style:* 90s Vintage Cinematic\n`;
-            captionText += `⚙️ *Generated via:* Stable Diffusion\n\n`;
-            captionText += `පහල තියෙන Buttons වලින් Image එක Edit කරගන්න 👇`;
+            // මේ User වෙනුවෙන් අන්තිමට හදපු image path එක save කරගන්නවා (ඊලඟ command වලට ඕන නිසා)
+            global.lastGeneratedImage[sender] = imgPath;
 
-            // Interactive Buttons එක්ක Image එක යවනවා
-            // buttonId එක ඇතුලෙන්ම image path එක අපි pass කරනවා ඊලඟ පියවරට ලේසි වෙන්න
-            await socket.sendMessage(sender, {
-                image: { url: imgPath },
-                caption: captionText,
-                buttons: [
-                    { buttonId: `edit_ratio_1:1_${imgPath}`, buttonText: { displayText: '🔳 1:1 Square' }, type: 1 },
-                    { buttonId: `edit_ratio_9:16_${imgPath}`, buttonText: { displayText: '📱 9:16 (TikTok/Reels)' }, type: 1 },
-                    { buttonId: `edit_brand_${imgPath}`, buttonText: { displayText: '✍️ Add Admin Label' }, type: 1 }
-                ],
-                viewOnce: false
-            }, { quoted: msg });
+            let replyText = `✨ *Prompt:* ${prompt}\n\n`;
+            replyText += `📸 *Style:* 90s Vintage Cinematic\n\n`;
+            replyText += `*Edit කරගන්න මේ Commands පාවිච්චි කරන්න:* 👇\n`;
+            replyText += `▫️ 1:1 කරන්න ➡️ `.resize 1:1`\n`;
+            replyText += `▫️ 9:16 කරන්න ➡️ `.resize 9:16`\n`;
+            replyText += `▫️ නම (Label) දාන්න ➡️ `.brand``;
 
+            await socket.sendMessage(sender, { image: { url: imgPath }, caption: replyText }, { quoted: msg });
             await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
 
         } catch (e) {
@@ -1290,68 +1282,78 @@ ${buildMenuBody(readMore)}
         break;
     }
 
-    // --- BUTTONS HANDLE කරන CASE එක ---
-    // User බොත්තමක් එබුවම වටහාගෙන වැඩ කරන්නේ මෙතනින්
-    case 'buttonsResponseMessage': {
+    // --- 2. RESIZE කරන COMMAND එක ---
+    case 'resize': {
         try {
-            const buttonId = msg.message.buttonsResponseMessage.selectedButtonId;
-            
-            // අපි හදපු image edit බොත්තමක් නෙවෙයි නම් මේකෙන් අයින් වෙනවා
-            if (!buttonId.startsWith('edit_')) break; 
+            let userImg = global.lastGeneratedImage[sender];
+            if (!userImg || !fs.existsSync(userImg)) {
+                return reply("❌ *ඔයා කලින් Generate කරපු Image එකක් හමුවුණේ නැත.* කරුණාකර නැවත `.imagine` කරන්න.");
+            }
 
-            const [_, action, type, imgPath] = buttonId.split('_');
-
-            // File එක දැනටමත් delete වෙලාද කියලා check කරනවා (safety check)
-            if (!fs.existsSync(imgPath)) {
-                return reply("❌ *Expired/File not found.* කරුණාකර නැවත අලුත් Image එකක් Generate කරන්න.");
+            let type = body.split(' ').slice(1).join(' ');
+            if (type !== '1:1' && type !== '9:16') {
+                return reply("❌ *කරුණාකර නිවැරදි Size එක දෙන්න.*\nEx: `.resize 1:1` හෝ `.resize 9:16`");
             }
 
             await socket.sendMessage(sender, { react: { text: '⚙️', key: msg.key } }).catch(() => {});
 
-            // 1. ASPECT RATIO RESIZE කරන කොටස
-            if (action === 'ratio') {
-                let width = 1080, height = 1080; // Default 1:1
-                if (type === '9:16') { width = 1080; height = 1920; } // TikTok ratio
+            let width = 1080, height = 1080; // Default 1:1
+            if (type === '9:16') { width = 1080; height = 1920; } // TikTok size
 
-                const resizedBuffer = await sharp(imgPath)
-                    .resize(width, height, { fit: 'cover' })
-                    .toBuffer();
+            const resizedBuffer = await sharp(userImg)
+                .resize(width, height, { fit: 'cover' })
+                .toBuffer();
 
-                await socket.sendMessage(sender, { 
-                    image: resizedBuffer, 
-                    caption: `✅ *Social Media Ready!* (${type} Ratio එකට සාර්ථකව Resize කරා)` 
-                }, { quoted: msg });
-            }
-
-            // 2. BRANDING WATERMARK ලේබල් එක දාන කොටස
-            if (action === 'brand') {
-                // කුඩා, premium පෙනුමක් තියෙන Text Label එකක් SVG එකකින් හදනවා
-                const svgText = `
-                    <svg width="300" height="50">
-                        <rect x="0" y="0" width="130" height="28" rx="5" fill="black" fill-opacity="0.5"/>
-                        <text x="12" y="18" font-family="Helvetica, Arial" font-size="12" fill="white" font-weight="bold">Admin Maliya</text>
-                    </svg>
-                `;
-
-                const watermarkedBuffer = await sharp(imgPath)
-                    .composite([{ input: Buffer.from(svgText), top: 15, left: 15 }]) // ඉහල වම් කෙලවරින් ඇඩ් වෙනවා
-                    .toBuffer();
-
-                await socket.sendMessage(sender, { 
-                    image: watermarkedBuffer, 
-                    caption: `✅ *Branding Added!* (Admin Maliya ලේබල් එක ඇතුලත් කරා)` 
-                }, { quoted: msg });
-            }
+            await socket.sendMessage(sender, { 
+                image: resizedBuffer, 
+                caption: `✅ *Resized to ${type} successfully!*` 
+            }, { quoted: msg });
 
             await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
 
         } catch (e) {
-            console.log("BUTTON ERROR:", e.message);
+            console.log("RESIZE ERROR:", e.message);
+            reply("❌ *Resize කිරීමට නොහැකි විය.*");
+        }
+        break;
+    }
+
+    // --- 3. BRANDING LABEL එක දාන COMMAND එක ---
+    case 'brand': {
+        try {
+            let userImg = global.lastGeneratedImage[sender];
+            if (!userImg || !fs.existsSync(userImg)) {
+                return reply("❌ *ඔයා කලින් Generate කරපු Image එකක් හමුවුණේ නැත.* කරුණාකර නැවත `.imagine` කරන්න.");
+            }
+
+            await socket.sendMessage(sender, { react: { text: '✍️', key: msg.key } }).catch(() => {});
+
+            // කුඩා Premium Text Label එකක් SVG එකකින්
+            const svgText = `
+                <svg width="300" height="50">
+                    <rect x="0" y="0" width="130" height="28" rx="5" fill="black" fill-opacity="0.5"/>
+                    <text x="12" y="18" font-family="Helvetica, Arial" font-size="12" fill="white" font-weight="bold">Admin Maliya</text>
+                </svg>
+            `;
+
+            const watermarkedBuffer = await sharp(userImg)
+                .composite([{ input: Buffer.from(svgText), top: 15, left: 15 }]) // ඉහල වම් කෙලවරින් ඇඩ් වේ
+                .toBuffer();
+
+            await socket.sendMessage(sender, { 
+                image: watermarkedBuffer, 
+                caption: `✅ *Branding Added!* (Admin Maliya ලේබල් එක ඇතුලත් කරා)` 
+            }, { quoted: msg });
+
+            await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
+
+        } catch (e) {
+            console.log("BRAND ERROR:", e.message);
+            reply("❌ *Label එක ඇතුලත් කිරීමට නොහැකි විය.*");
         }
         break;
     }
 }
-
 
 // ════════════ WEATHER ════════════
 case 'weather': {
