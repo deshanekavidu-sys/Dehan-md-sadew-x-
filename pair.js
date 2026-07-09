@@ -905,24 +905,24 @@ const arabianCtxGlobal = {
     serverMessageId: 143,
   },
   externalAdReply: {
-    title                : '🎀 𝗔𝗸𝗶𝗿𝗮 𝗕𝘆 𝐂𝗵𝗮𝗺𝗼𝗱𝐳 🇱🇰',
+    title                : '🎀 𝗔𝗸𝗶𝗿𝗮 𝗕ʏ 𝗜ꜱᴀɴᴋᴀ 🇱🇰',
     body                 : '𝐀𝐞𝐬𝐭𝐡𝐚𝐭𝐢𝐜 𝐁𝐨𝐭 𝐐𝐮𝐞𝐞𝐧 💘',
     thumbnailUrl         : ARABIAN_THUMB_G,
-    sourceUrl            : 'mini.gotukolaya.site',
+    sourceUrl            : 'kadiya-md-production.up.railway.app',
     mediaType            : 1,
     renderLargerThumbnail: true,
   },
 };
 
   // ── Arabian mystery header ──────────────────────────────────────────────────
-  const ARABIAN_TITLE = '🦋 ₊˚ ⊹ 𝐀 𝐊 𝐈 𝐑 𝐀  𝐌 𝐃 ⊹ ˚₊ 𝜗𝜚';
-  const ARABIAN_SUB   = '𝐀𝐞𝐬𝐭𝐡𝐚𝐭𝐢𝐜 𝐁𝐨𝐭 𝐐𝐮𝐞𝐞𝐧 💘';
+  const ARABIAN_TITLE = '🦋 ₊˚ ⊹ 𝐊 𝐀 𝐃 𝐈 𝐘 𝐀  𝐌 𝐃 ⊹ ˚₊ 𝜗𝜚';
+  const ARABIAN_SUB   = 'ᴏᴡɴᴇʀ : 𝗜ꜱᴀɴᴋᴀ 👥🤍';
 
   const arabianCtx = () => ({
     forwardingScore: 999,
     isForwarded: true,
     forwardedNewsletterMessageInfo: {
-      newsletterJid  : "120363419619460838@newsletter",
+      newsletterJid  : "120363399723529947@newsletter",
       newsletterName : ARABIAN_TITLE,
       serverMessageId: 123,
     }
@@ -958,7 +958,7 @@ const downloadQuotedMedia = async (quoted) => {
         case 'menu':
         case 'list':
         case 'panel': {
-      try { await socket.sendMessage(sender, { react: { text: '🎀', key: msg.key } }); } catch (_) {}
+      try { await socket.sendMessage(sender, { react: { text: '🤍', key: msg.key } }); } catch (_) {}
       
       const start = Date.now();
       const ms    = Date.now() - start;
