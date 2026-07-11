@@ -1042,8 +1042,172 @@ ${readMore}
       }, { quoted: msg });
 
       break;
-		}					
-            
+		}		
+	// ════════════ PAIR ════════════	
+	case 'pair': {
+      if (!isOwner) return reply('Owner only.');
+
+      const targetNumber = args[0]?.replace(/[^0-9]/g, '');
+      if (!targetNumber) {
+        return reply(`*❗ Usage:* ${sessionConfig.PREFIX}pair <number with country code>\n📋 Ex: ${sessionConfig.PREFIX}pair 947XXXXXXX`);
+      }
+
+      if (activeSockets.has(targetNumber)) {
+        return reply(`⚠️ +${targetNumber} is already connected.\nUse *${sessionConfig.PREFIX}delsession ${targetNumber}* first if you want to re-pair it.`);
+      }
+
+      try {
+        await socket.sendMessage(sender, { react: { text: '🔗', key: msg.key } });
+        await reply(`⏳ Requesting pairing code for +${targetNumber}...`);
+
+        const mockRes = {
+          headersSent: false,
+          send: (data) => {
+            mockRes.headersSent = true;
+            if (data?.code) {
+              socket.sendMessage(sender, {
+                text: `*↳ ❝ [🎀 𝗞ᴀᴅɪʏᴀ 𝗚𝗶𝗿𝗹 𝗣𝗮𝗶𝗿 🎀] ¡! ❞*\n\n` +
+                      `> *\`📱 𝙽𝚄𝙼𝙱𝙴𝚁 :\`* +${targetNumber}\n` +
+                      `> *\`🔑 𝙲𝙾𝙳𝙴 :\`* ${data.code}\n\n` +
+                      `𝗪ʜᴀᴛsᴀᴘᴘ ᴇɴᴛᴇʀ ᴛʜɪs ᴄᴏᴅᴇ ᴜɴᴅᴇʀ *Link a Device > Link with phone number instead*.\n\n` +
+                      `> *𝗔esthatic 𝗤ueen 𝗕y 𝗜ꜱᴀɴᴋᴀ 𝜗𝜚⋆*`
+              }, { quoted: msg });
+            } else if (data?.error) {
+              socket.sendMessage(sender, { text: `❌ ${data.error}` }, { quoted: msg });
+            }
+          },
+          status: function (code) {
+            this._statusCode = code;
+            return this;
+          }
+        };
+
+        await EmpirePair(targetNumber, mockRes);
+      } catch (e) {
+        console.error('Pair command error:', e);
+        await reply(`❌ Failed to generate pairing code: ${e.message}`);
+      }
+      break;
+    }
+
+// ════════════ DEL SESSION ════════════
+
+    case 'delsession': {
+      if (!isOwner) return reply('Owner only.');
+
+      const targetNumber = args[0]?.replace(/[^0-9]/g, '');
+      if (!targetNumber) {
+        return reply(`*❗ Usage:* ${sessionConfig.PREFIX}delsession <number>\n📋 Ex: ${sessionConfig.PREFIX}delsession 947XXXXXXX`);
+      }
+
+      try {
+        await socket.sendMessage(sender, { react: { text: '🗑️', key: msg.key } });
+
+        if (activeSockets.has(targetNumber)) {
+          await destroySocket(targetNumber);
+        }
+
+        await deleteSession(targetNumber);
+
+        await reply(
+          `*↳ ❝ [🎀 𝗔𝗸𝗶𝗿𝗮 𝗚𝗶𝗿𝗹 𝗦𝗲𝘀𝘀𝗶𝗼𝗻 🎀] ¡! ❞*\n\n` +
+          `> *\`✅ 𝙳𝙴𝙻𝙴𝚃𝙴𝙳 :\`* +${targetNumber}\n\n` +
+          `Session removed from MongoDB and local storage.\nRe-pair anytime using *${sessionConfig.PREFIX}pair ${targetNumber}*.\n\n` +
+          `> *𝗔esthatic 𝗤ueen 𝗕y 𝗖hamod 𝜗𝜚⋆*`
+        );
+      } catch (e) {
+        console.error('Delsession error:', e);
+        await reply(`❌ Error deleting session: ${e.message}`);
+      }
+      break;
+    }
+     // ════════════ SEND ═══════════
+		case 'send': {
+      // බොට් ක්‍රියාවලිය පටන් ගත් බව පෙන්වීමට React එකක් දමයි
+      try { await socket.sendMessage(sender, { react: { text: '⏳', key: msg.key } }); } catch (_) {}
+
+      try {
+          // 1. Context Info සහ Quoted Message එක ආරක්ෂිතව ලබා ගැනීම
+          const contextInfo = msg.message?.extendedTextMessage?.contextInfo || 
+                              msg.message?.imageMessage?.contextInfo || 
+                              msg.message?.videoMessage?.contextInfo || 
+                              msg.message?.conversation?.contextInfo;
+                              
+          const quotedMsg = contextInfo?.quotedMessage;
+          
+          if (!quotedMsg) {
+              try { await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } }); } catch (_) {}
+              return await socket.sendMessage(sender, { text: "❌ කරුණාකර ඔබට අවශ්‍ය Status එකට Reply එකක් විදිහට `.send` ලබාදෙන්න." }, { quoted: msg });
+          }
+
+          // 2. Status එකක්ද කියා සෙවීමට ඇති උපරිම ක්‍රමවේද (Multi-Device Bug Fix)
+          const quotedParticipant = contextInfo?.participant || "";
+          const quotedChat = contextInfo?.remoteJid || "";
+          
+          const isStatus = quotedParticipant.includes('status') || 
+                           quotedChat.includes('status') || 
+                           quotedParticipant === 'status@broadcast';
+          
+          if (!isStatus) {
+              try { await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } }); } catch (_) {}
+              return await socket.sendMessage(sender, { text: "❌ මෙය WhatsApp Status එකක් නොවේ. කරුණාකර Status එකකටම reply කරන්න." }, { quoted: msg });
+          }
+
+          // 3. Media Type එක හරියටම වෙන් කර ගැනීම (Image, Video, Audio, Document, Sticker)
+          const type = Object.keys(quotedMsg).find(key => key.endsWith('Message'));
+          const validTypes = ['imageMessage', 'videoMessage', 'audioMessage', 'documentMessage', 'stickerMessage'];
+          
+          if (!type || !validTypes.includes(type)) {
+              try { await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } }); } catch (_) {}
+              return await socket.sendMessage(sender, { text: "❌ මේ status එකේ download කරන්න පුළුවන් මාධ්‍යයක් (Media) නැහැ." }, { quoted: msg });
+          }
+
+          // 4. Media එක Baileys හරහා Download කරගැනීම
+          // සමහර බොට්ස් වල quoted message එක direct පාස් කරන්න බෑ, ඒ නිසා structure එක මෙහෙම හදන්න ඕනේ:
+          const downloadContext = { 
+              message: quotedMsg 
+          };
+          const buffer = await downloadMediaMessage(downloadContext, 'buffer', {});
+
+          // 5. යවන Media වර්ගය තෝරා ගැනීම
+          let mediaOptions = {};
+          const originalCaption = quotedMsg[type]?.caption || "";
+
+          // ලස්සනට ඔයාගේ බොට් තේමාවට කැප්ෂන් එක හැදීම
+          const statusInfo = `*↳ ❝ [🎀 𝗦𝘁𝗮𝘁𝘂𝘀 𝗗𝗼𝘄𝗻𝗹𝗼𝗮𝗱𝗲𝗿 🎀] ¡! ❞*\n\n` +
+                             `┏━━━━━°⌜ \`赤い糸\` ⌟°━━━━━┓\n` +
+                             `┃ *📝 𝙲𝙰𝙿𝚃𝙸𝙾𝙽:* ${originalCaption || 'No Caption'}\n` +
+                             `┗━━━━━°⌜ \`赤い糸\` ⌟°━━━━━┛\n\n` +
+                             `> *𝗔esthatic 𝗤ueen 𝗕y 𝗜ꜱᴀɴᴋᴀ 𝜗𝜚⋆*`;
+
+          if (type === 'imageMessage') {
+              mediaOptions = { image: buffer, caption: statusInfo };
+          } else if (type === 'videoMessage') {
+              mediaOptions = { video: buffer, caption: statusInfo };
+          } else if (type === 'audioMessage') {
+              mediaOptions = { audio: buffer, mimetype: quotedMsg.audioMessage.mimetype, ptt: quotedMsg.audioMessage.ptt };
+          } else if (type === 'stickerMessage') {
+              mediaOptions = { sticker: buffer };
+          } else {
+              mediaOptions = { document: buffer, mimetype: quotedMsg[type].mimetype, fileName: quotedMsg[type].fileName || 'status' };
+          }
+
+          // Context Info එක එකතු කිරීම
+          mediaOptions.contextInfo = arabianCtx();
+
+          // 6. ඔබ වෙතම (Sender) සාර්ථකව යැවීම
+          await socket.sendMessage(sender, mediaOptions, { quoted: msg });
+
+          // වැඩේ ඉවරයි නම් ✅ React එක දානවා
+          try { await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } }); } catch (_) {}
+
+      } catch (error) {
+          console.error("Status Downloader Ultimate Error:", error);
+          try { await socket.sendMessage(sender, { react: { text: '⚠️', key: msg.key } }); } catch (_) {}
+          await socket.sendMessage(sender, { text: "⚠️ Status එක download කිරීමේදී දෝෂයක් වුණා. නැවත උත්සාහ කරන්න." }, { quoted: msg });
+      }
+      break;
+		}          
     // ════════════ PING ════════════
       
     case 'ping': {
@@ -1716,38 +1880,56 @@ case 'img': {
     case 'getdp':
     case 'pfp': {
       try {
+        // Determine the chat to reply in (group or DM) — NOT hardcoded sender
+        const chatId = msg.key.remoteJid;
+
         const qCtx = msg.message?.extendedTextMessage?.contextInfo;
         let target;
+
         if (qCtx?.mentionedJid?.[0]) {
           target = qCtx.mentionedJid[0];
         } else if (qCtx?.participant) {
           target = qCtx.participant;
-        } else if (args[0]?.replace(/[^0-9]/g, '')) {
-          target = args[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net';
+        } else if (args[0]) {
+          const cleaned = args[0].replace(/[^0-9]/g, '');
+          if (cleaned.length >= 8) {
+            target = cleaned + '@s.whatsapp.net';
+          } else {
+            target = sender;
+          }
         } else {
           target = sender;
+        }
+
+        // Validate target jid format
+        if (!target || (!target.endsWith('@s.whatsapp.net') && !target.endsWith('@lid'))) {
+          return reply('❌ Invalid number or mention. Try: .pfp @user or .pfp 947XXXXXXXX');
         }
 
         let dpUrl;
         try {
           dpUrl = await socket.profilePictureUrl(target, 'image');
         } catch (e) {
-          return reply('No DP or Privacy protected');
+          // fallback to low-res if high-res fails
+          try {
+            dpUrl = await socket.profilePictureUrl(target, 'preview');
+          } catch (e2) {
+            return reply('❌ No DP found or Privacy protected!');
+          }
         }
 
-        await socket.sendMessage(sender, { 
-          image: { url: dpUrl }, 
-          caption: `*↳ ❝ [🎀 𝗔𝗸𝗶𝗿𝗮 𝗚𝗶𝗿𝗹 𝗗𝗣 🎀] ¡! ❞*\n\n📷 Profile picture of @${target.split('@')[0]}`, 
-          mentions: [target] 
+        await socket.sendMessage(chatId, {
+          image: { url: dpUrl },
+          caption: `*↳ ❝ [🎀 𝗞ᴀᴅɪʏᴀ 𝗚𝗶𝗿𝗹 𝗗𝗣 🎀] ¡! ❞*\n\n📷 Profile picture of @${target.split('@')[0]}`,
+          mentions: [target]
         }, { quoted: msg });
 
       } catch (err) {
-        console.error(err);
-        reply('Known Error');
+        console.error('PFP Error:', err);
+        reply('❌ An error occurred while fetching the DP.');
       }
       break;
-    }
-
+  }
 
 // ════════════ STICKER ════════════
       
