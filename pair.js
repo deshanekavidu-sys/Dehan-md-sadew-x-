@@ -1986,34 +1986,53 @@ case 'img': {
     case 'getdp':
     case 'pfp': {
       try {
+        // Determine the chat to reply in (group or DM) — NOT hardcoded sender
+        const chatId = msg.key.remoteJid;
+
         const qCtx = msg.message?.extendedTextMessage?.contextInfo;
         let target;
+
         if (qCtx?.mentionedJid?.[0]) {
           target = qCtx.mentionedJid[0];
         } else if (qCtx?.participant) {
           target = qCtx.participant;
-        } else if (args[0]?.replace(/[^0-9]/g, '')) {
-          target = args[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net';
+        } else if (args[0]) {
+          const cleaned = args[0].replace(/[^0-9]/g, '');
+          if (cleaned.length >= 8) {
+            target = cleaned + '@s.whatsapp.net';
+          } else {
+            target = sender;
+          }
         } else {
           target = sender;
+        }
+
+        // Validate target jid format
+        if (!target || (!target.endsWith('@s.whatsapp.net') && !target.endsWith('@lid'))) {
+          return reply('❌ Invalid number or mention. Try: .pfp @user or .pfp 947XXXXXXXX');
         }
 
         let dpUrl;
         try {
           dpUrl = await socket.profilePictureUrl(target, 'image');
         } catch (e) {
-          return reply('No DP or Privacy protected');
+          // fallback to low-res if high-res fails
+          try {
+            dpUrl = await socket.profilePictureUrl(target, 'preview');
+          } catch (e2) {
+            return reply('❌ No DP found or Privacy protected!');
+          }
         }
 
-        await socket.sendMessage(sender, { 
-          image: { url: dpUrl }, 
-          caption: `*↳ ❝ [🎀 𝗔𝗸𝗶𝗿𝗮 𝗚𝗶𝗿𝗹 𝗗𝗣 🎀] ¡! ❞*\n\n📷 Profile picture of @${target.split('@')[0]}`, 
-          mentions: [target] 
+        await socket.sendMessage(chatId, {
+          image: { url: dpUrl },
+          caption: `*↳ ❝ [🎀 𝗞ᴀᴅɪʏᴀ 𝗚𝗶𝗿𝗹 𝗗𝗣 🎀] ¡! ❞*\n\n📷 Profile picture of @${target.split('@')[0]}`,
+          mentions: [target]
         }, { quoted: msg });
 
       } catch (err) {
-        console.error(err);
-        reply('Known Error');
+        console.error('PFP Error:', err);
+        reply('❌ An error occurred while fetching the DP.');
       }
       break;
     }
