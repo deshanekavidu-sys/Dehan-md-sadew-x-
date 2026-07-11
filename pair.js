@@ -1459,108 +1459,151 @@ case 'alive': {
     break;
 }
 // ════════════ ALIVE ════════════
-case 'movie': {
-    try { await socket.sendMessage(sender, { react: { text: '⏳', key: msg.key } }); } catch (_){}
+case 'nic':
+case 'nicinfo':
+case 'nicdecode': {
+    try { await socket.sendMessage(sender, { react: { text: '🔎', key: msg.key } }); } catch (_) {}
+
+    const nicInput = (args[0] || '').toString().trim().toUpperCase();
+    const nicRegex = /^([0-9]{9}[VXvx]|[0-9]{12})$/;
+
+    if (!nicInput || !nicRegex.test(nicInput)) {
+        try { await socket.sendMessage(sender, { react: { text: '❓', key: msg.key } }); } catch (_) {}
+        return await socket.sendMessage(sender, {
+            text: `*❓ Usage:*\n${sessionConfig.PREFIX || '.'}nic <NIC_NUMBER>\n\n*Example:* ${sessionConfig.PREFIX || '.'}nic 705693323V`
+        }, { quoted: msg });
+    }
 
     try {
-        const args = text.trim().split(/ +/).slice(1);
-        const movieName = args.join(' ');
-
-        if (!movieName) {
-            try { await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } }); } catch (_){}
-            return await socket.sendMessage(sender, { text: "❌ Movie එකේ නම දෙන්න.\n\n*Ex:* `.movie paththini`" }, { quoted: msg });
-        }
-
-        await socket.sendMessage(sender, { text: `🔍 *${movieName}* search කරනවා...` }, { quoted: msg });
-
-        // 1. SEARCH API
-        const searchRes = await axios.get(`https://nntech-free-sinhalasub-search-api.vercel.app/api/search?text=${encodeURIComponent(movieName)}`, {timeout: 15000});
-
-        let results = searchRes.data?.results || searchRes.data?.data || searchRes.data || []
-
-        if(!Array.isArray(results) || results.length === 0){
-            try { await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } }); } catch (_){}
-            return await socket.sendMessage(sender, { text: `❌ "${movieName}" කියලා movie එකක් හොයාගන්න බැරි උනා.` }, { quoted: msg });
-        }
-
-        let listMsg = `*NNTECH MOVIE SEARCH RESULTS*\n\n`;
-
-        results.slice(0, 10).forEach((v, i) => {
-            const title = v.title || v.name || v.movie || `Result ${i+1}`
-            listMsg += `*${i+1}.* ${title}\n`;
+        const apiRes = await axios.get(`https://nic-decoder-by-kcey.onrender.com/api/nic/${nicInput}`, {
+            timeout: 25000,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
         });
 
-        listMsg += `\n⬇️ Download කරන්න number එක reply කරන්න\n*Ex:* 1`;
+        const data = apiRes.data;
+        const result = data?.data || data?.result || data;
 
-        await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
-        const sentMsg = await socket.sendMessage(sender, { text: listMsg }, { quoted: msg });
-
-        // 3. USER REPLY WAIT
-        const handler = async (m) => {
-            const msg2 = m.messages[0]
-            if(!msg2?.message || msg2.key.remoteJid!== sender) return
-            if(msg2.message.extendedTextMessage?.contextInfo?.stanzaId!== sentMsg.key.id) return
-
-            socket.ev.off('messages.upsert', handler) // 1 පාරයි
-
-            const choice = msg2.message.conversation || msg2.message.extendedTextMessage?.text
-            const index = parseInt(choice) - 1
-
-            if(isNaN(index) || index < 0 || index >= results.length) return
-
-            try { await socket.sendMessage(sender, { react: { text: '⏳', key: msg2.key } }); } catch (_){}
-            await socket.sendMessage(sender, { text: `⬇️ Download link එක ගන්නවා...` }, { quoted: msg2 });
-
-            // 4. DOWNLOAD API
-            const selected = results[index]
-            const downloadUrl = selected.url || selected.link || selected.download
-
-            const dlRes = await axios.get(`https://nntech-free-sinhalasub-dl-api.vercel.app/api/download?url=${encodeURIComponent(downloadUrl)}`, {timeout: 20000});
-
-            const videoUrl = dlRes.data?.url || dlRes.data?.download || dlRes.data?.result || dlRes.data?.link
-
-            if(!videoUrl){
-                try { await socket.sendMessage(sender, { react: { text: '❌', key: msg2.key } }); } catch (_){}
-                return await socket.sendMessage(sender, { text: "❌ Download link එක හොයාගන්න බැරි උනා\nAPI Error: " + JSON.stringify(dlRes.data) }, { quoted: msg2 });
-            }
-
-            // 5. FILE SIZE CHECK
-            let fileSize = 0, sizeMB = "Unknown"
-            try {
-                const head = await axios.head(videoUrl, {timeout: 10000})
-                fileSize = parseInt(head.headers['content-length']) || 0
-                sizeMB = (fileSize / 1024 / 1024).toFixed(2)
-            } catch(e){}
-
-            const MAX_SIZE = 100 * 1024 * 1024
-
-            if(fileSize > MAX_SIZE){
-                try { await socket.sendMessage(sender, { react: { text: '📎', key: msg2.key } }); } catch (_){}
-                await socket.sendMessage(sender, {
-                    text: `*${selected.title || selected.name}*\n\n⚠️ File එක ${sizeMB}MB. WhatsApp limit 100MB.\n\n*Download Link:* ${videoUrl}`
-                }, { quoted: msg2 });
-            } else {
-                try { await socket.sendMessage(sender, { react: { text: '📤', key: msg2.key } }); } catch (_){}
-                await socket.sendMessage(sender, {
-                    video: { url: videoUrl },
-                    caption: `*${selected.title || selected.name}*\nSize: ${sizeMB}MB\n\nPowered by NNTECH`,
-                    mimetype: 'video/mp4'
-                }, { quoted: msg2 });
-            }
-
-            try { await socket.sendMessage(sender, { react: { text: '✅', key: msg2.key } }); } catch (_){}
-
+        if (!result || data?.success === false || data?.error) {
+            try { await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } }); } catch (_) {}
+            return await socket.sendMessage(sender, {
+                text: `❌ NIC *${nicInput}* සදහා තොරතුරු ලබාගත නොහැකි විය.\n${data?.error || data?.message || ''}`
+            }, { quoted: msg });
         }
-        socket.ev.on('messages.upsert', handler)
+
+        // Base Data
+        const dobStr = result.dob || result.dateOfBirth || result.birthday;
+        let gender = result.gender || result.sex || 'N/A';
+        const nicType = result.type || (nicInput.length === 10 ? 'Old Format (9-Digit)' : 'New Format (12-Digit)');
+
+        if (!dobStr || dobStr === 'N/A') {
+            throw new Error("Could not extract Date of Birth from API.");
+        }
+
+        // Gender සිංහලෙන් සහ Emoji සමඟ ලස්සන කිරීම
+        if (gender.toLowerCase() === 'male') gender = 'Male 👦 (පුරුෂ)';
+        else if (gender.toLowerCase() === 'female') gender = 'Female 👧 (ස්ත්‍රී)';
+
+        // Age Calculation
+        const birthDate = new Date(dobStr);
+        const today = new Date();
+        
+        let years = today.getFullYear() - birthDate.getFullYear();
+        let months = today.getMonth() - birthDate.getMonth();
+        let days = today.getDate() - birthDate.getDate();
+
+        if (days < 0) {
+            months -= 1;
+            const previousMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+            days += previousMonth.getDate();
+        }
+        if (months < 0) {
+            years -= 1;
+            months += 12;
+        }
+        const ageShow = `${years} Years, ${months} Months, ${days} Days`;
+
+        // Zodiac Sign Calculation
+        const month = birthDate.getMonth() + 1;
+        const day = birthDate.getDate();
+        let zodiac = 'N/A';
+
+        if ((month == 3 && day >= 21) || (month == 4 && day <= 19)) zodiac = 'Aries ♈ (මේෂ)';
+        else if ((month == 4 && day >= 20) || (month == 5 && day <= 20)) zodiac = 'Taurus ♉ (වෘෂභ)';
+        else if ((month == 5 && day >= 21) || (month == 6 && day <= 20)) zodiac = 'Gemini ♊ (මිථුන)';
+        else if ((month == 6 && day >= 21) || (month == 7 && day <= 22)) zodiac = 'Cancer ♋ (කටක)';
+        else if ((month == 7 && day >= 23) || (month == 8 && day <= 22)) zodiac = 'Leo ♌ (සිංහ)';
+        else if ((month == 8 && day >= 23) || (month == 9 && day <= 22)) zodiac = 'Virgo ♍ (කන්‍යා)';
+        else if ((month == 9 && day >= 23) || (month == 10 && day <= 22)) zodiac = 'Libra ♎ (තුලා)';
+        else if ((month == 10 && day >= 23) || (month == 11 && day <= 21)) zodiac = 'Scorpio ♏ (වෘශ්චික)';
+        else if ((month == 11 && day >= 22) || (month == 12 && day <= 21)) zodiac = 'Sagittarius ♐ (ධනු)';
+        else if ((month == 12 && day >= 22) || (month == 1 && day <= 19)) zodiac = 'Capricorn ♑ (මකර)';
+        else if ((month == 1 && day >= 20) || (month == 2 && day <= 18)) zodiac = 'Aquarius ♒ (කුම්භ)';
+        else if ((month == 2 && day >= 19) || (month == 3 && day <= 20)) zodiac = 'Pisces ♓ (මීන)';
+
+        // Generation Calculation
+        const birthYear = birthDate.getFullYear();
+        let generation = 'N/A';
+
+        if (birthYear >= 1928 && birthYear <= 1945) generation = 'Silent Generation 👴👵';
+        else if (birthYear >= 1946 && birthYear <= 1964) generation = 'Baby Boomers 👶💥';
+        else if (birthYear >= 1965 && birthYear <= 1980) generation = 'Generation X (Gen X) 💼';
+        else if (birthYear >= 1981 && birthYear <= 1996) generation = 'Millennials (Gen Y) 📱';
+        else if (birthYear >= 1997 && birthYear <= 2012) generation = 'Generation Z (Gen Z) 🎮';
+        else if (birthYear >= 2013 && birthYear <= 2026) generation = 'Generation Alpha (Gen Alpha) 🤖';
+
+        // 🌟 Premium Quality Output Design 🌟
+        let out = `✨ *𝗦𝗥𝗜 𝗟𝗔𝗡𝗞𝗔 𝗡𝗜𝗖 𝗗𝗘𝗖𝗢𝗗𝗘𝗥* ✨\n`;
+        out += `⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯\n\n`;
+        
+        out += `📝 *📋 𝖯𝖾𝗋𝗌𝗈𝗇𝖺𝗅 𝖨𝗇𝖿𝗈𝗋𝗆𝖺𝗍𝗂𝗈𝗇*\n`;
+        out += `  📍 *NIC:* ${nicInput}\n`;
+        out += `  👤 *Gender:* ${gender}\n`;
+        out += `  📅 *DOB:* ${dobStr}\n`;
+        out += `  ⏳ *Age:* ${ageShow}\n\n`;
+        
+        out += `✨ *🔮 𝖠𝗌𝗍𝗋𝗈𝗅𝗈𝗀𝗒 & 𝖦𝖾𝗇𝖾𝗋𝖺𝗍𝗂𝗈𝗇*\n`;
+        out += `  ♌ *Zodiac:* ${zodiac}\n`;
+        out += `  🌐 *Gen:* ${generation}\n\n`;
+        
+        out += `⚙️ *ℹ️ 𝖲𝗒𝗌𝗍𝖾𝗆 𝖣𝖾𝗍𝖺𝗂𝗅𝗌*\n`;
+        out += `  📊 *Type:* ${nicType}\n`;
+        out += `  ⚡ *Status:* Decoded Successfully ✓\n\n`;
+        
+        out += `> 𝐊 𝐂𝐞𝐘 | 𝐃𝐞𝐯𝐑𝐚𝐛𝐛𝐢𝐭𝐙𝐳 🎀`;
+
+        try { await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } }); } catch (_) {}
+        
+        await socket.sendMessage(sender, {
+            text: out.trim(),
+            contextInfo: {
+                externalAdReply: {
+                    title: `✨ NIC DECODER INSIGHTS ✨`,
+                    body: `ID: ${nicInput} | Age: ${years} Years`,
+                    thumbnailUrl: akira, 
+                    sourceUrl: '',
+                    mediaType: 1,
+                    renderLargerThumbnail: true
+                }
+            }
+        }, { quoted: msg });
 
     } catch (error) {
-        console.error("Movie Error:", error.response?.data || error.message);
-        try { await socket.sendMessage(sender, { react: { text: '⚠️', key: msg.key } }); } catch (_){}
-        await socket.sendMessage(sender, { text: `⚠️ Error: ${error.message}\nAPI එක down ද? ටිකකින් try කරන්න.` }, { quoted: msg });
+        console.error('NIC Decoder Error:', error.message);
+        const isTimeout = error.message.includes('timeout') || error.code === 'ECONNABORTED';
+        try { await socket.sendMessage(sender, { react: { text: '⚠️', key: msg.key } }); } catch (_) {}
+        
+        await socket.sendMessage(sender, {
+            text: isTimeout 
+                ? `⚠️ API Timeout විය! කරුණාකර තත්පර කිහිපයකින් නැවත උත්සාහ කරන්න.`
+                : `⚠️ Error decoding NIC: ${error.message}`
+        }, { quoted: msg });
     }
     break;
 }
-					
+
+			
 // ════════════ SYSTEM ════════════
 
     case 'system': {
