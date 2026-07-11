@@ -2641,113 +2641,70 @@ case 'newmail': {
 
 // ════════════ FREE FIRE UID INFO ════════════
 // .ffinfo <uid>   -> fetch Free Fire player info by UID
-case 'ffinfo':
-case 'ffid':
-case 'ff': {
+case 'nic':
+case 'nicinfo':
+case 'nicdecode': {
     try { await socket.sendMessage(sender, { react: { text: '🔎', key: msg.key } }); } catch (_) {}
 
-    const uid = (args[0] || '').toString().trim();
-    if (!uid || !/^\d{6,12}$/.test(uid)) {
+    const nicInput = (args[0] || '').toString().trim().toUpperCase();
+    
+    // ශ්‍රී ලංකා NIC අංක නිවැරදිදැයි බැලීමේ Regex එක (පැරණි 9v/9x හෝ අලුත් 12 ඉලක්කම්)
+    const nicRegex = /^([0-9]{9}[VXvx]|[0-9]{12})$/;
+
+    if (!nicInput || !nicRegex.test(nicInput)) {
         try { await socket.sendMessage(sender, { react: { text: '❓', key: msg.key } }); } catch (_) {}
         return await socket.sendMessage(sender, {
-            text: `*❓ Usage:*\n${sessionConfig.PREFIX || '.'}ffinfo <UID>\n\n*Example:* ${sessionConfig.PREFIX || '.'}ffinfo 123456789`
-        }, { quoted: msg });
-    }
-
-    // බහුතරයක් වැඩ කරන API ලැයිස්තුවක් (එකක් fail වුනොත් අනෙක වැඩ කරයි)
-    const apiUrls = [
-        'https://ff-id-info-4-akira-girl-8bru.vercel.app/player-info',
-        'https://freefire-api.vercel.app/api/player' // Fallback API 1 (උදාහරණයක් ලෙස)
-    ];
-
-    let apiRes = null;
-    let errorMsg = '';
-
-    // API එකෙන් එක try කිරීම
-    for (const url of apiUrls) {
-        try {
-            apiRes = await axios.get(url, {
-                params: { uid },
-                timeout: 30000, // Timeout එක තත්පර 30ක් දක්වා වැඩි කලා
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-                }
-            });
-            if (apiRes.data) break; // Data ලැබුනොත් loop එක නවත්වන්න
-        } catch (err) {
-            errorMsg = err.response?.data?.error || err.message;
-            console.log(`Failed fetching from ${url}, trying next...`);
-        }
-    }
-
-    // කිසිම API එකක් වැඩ නොකලොත්
-    if (!apiRes || !apiRes.data) {
-        try { await socket.sendMessage(sender, { react: { text: '⚠️', key: msg.key } }); } catch (_) {}
-        return await socket.sendMessage(sender, {
-            text: `⚠️ API එකෙන් ප්‍රතිචාරයක් නැත (Timeout). කරුණාකර සුළු මොහොතකින් නැවත උත්සාහ කරන්න.\n*Error:* ${errorMsg}`
+            text: `*❓ Usage:*\n${sessionConfig.PREFIX || '.'}nic <NIC_NUMBER>\n\n*Example:* ${sessionConfig.PREFIX || '.'}nic 199912345678`
         }, { quoted: msg });
     }
 
     try {
+        // Base URL එක සහ Endpoint එක එකතු කර Request එක යැවීම
+        const apiRes = await axios.get(`https://nic-decoder-by-kcey.onrender.com/api/nic/${nicInput}`, {
+            timeout: 25000, // Timeout එක තත්පර 25ක් ලෙස (Render spins down, so needs time)
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+        });
+
         const data = apiRes.data;
-        const result = data?.data || data?.result || data?.player || data;
+        // API එකෙන් එන response එක කෙලින්ම හෝ 'data' object එකක් ඇතුලෙන් ගැනීම
+        const result = data?.data || data?.result || data;
 
         if (!result || data?.success === false || data?.error) {
             try { await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } }); } catch (_) {}
             return await socket.sendMessage(sender, {
-                text: `❌ UID *${uid}* සදහා තොරතුරු හොයාගන්න බැරි උනා.\n${data?.error || data?.message || ''}`
+                text: `❌ NIC *${nicInput}* සදහා තොරතුරු ලබාගත නොහැකි විය.\n${data?.error || data?.message || ''}`
             }, { quoted: msg });
         }
 
-        // Flatten sections
-        const basic = result.basicInfo || result.basic_info || result.AccountInfo || result.account || result;
-        const clan = result.clanBasicInfo || result.guild || result.Guild || result.clan;
-        const brRank = result.brRank || result.BR_Rank || result.rank?.br;
-        const csRank = result.csRank || result.CS_Rank || result.rank?.cs;
+        // API Response එකෙන් දත්ත වෙන් කර හඳුනා ගැනීම (API Response Keys මත පදනම්ව)
+        const dob = result.dob || result.dateOfBirth || result.birthday || 'N/A';
+        const gender = result.gender || result.sex || 'N/A';
+        const age = result.age || 'N/A';
+        const zodiac = result.zodiac || result.zodiacSign || 'N/A';
+        const generation = result.generation || result.generationInfo || 'N/A';
+        const nicType = result.type || (nicInput.length === 10 ? 'Old NIC' : 'New NIC');
 
-        const nickname = basic?.nickname || basic?.name || result.nickname || 'Unknown';
-        const level = basic?.level || basic?.Level || result.level || 'N/A';
-        const likes = basic?.liked || basic?.likes || result.likes || 'N/A';
-        const region = basic?.region || result.region || 'N/A';
-        const exp = basic?.exp || basic?.experience || 'N/A';
-        const signature = basic?.signature || basic?.bio || '';
-        const createAt = basic?.createAt || basic?.accountCreateTime || basic?.created || 'N/A';
-        const lastLogin = basic?.lastLoginAt || basic?.lastLogin || 'N/A';
-
-        const guildName = clan?.guildName || clan?.name || 'No Guild';
-        const guildLevel = clan?.guildLevel || clan?.level || 'N/A';
-        const guildMembers = clan?.guildMemberCount || clan?.members || 'N/A';
-
-        const brRankShow = brRank?.rank || brRank || 'N/A';
-        const brPoints = brRank?.rankingPoints || brRank?.points || 'N/A';
-        const csRankShow = csRank?.rank || csRank || 'N/A';
-        const csPoints = csRank?.rankingPoints || csRank?.points || 'N/A';
-
-        let out = `*🎀 𝗙𝗿𝗲𝗲 𝗙𝗶𝗿𝗲 𝗣𝗹𝗮𝘆𝗲𝗿 𝗜𝗻𝗳𝗼 🎀*\n\n`;
-        out += `👤 *Nickname:* ${nickname}\n`;
-        out += `🆔 *UID:* ${uid}\n`;
-        out += `📶 *Level:* ${level}${exp !== 'N/A' ? ` (EXP: ${exp})` : ''}\n`;
-        out += `❤️ *Likes:* ${likes}\n`;
-        out += `🌍 *Region:* ${region}\n`;
-        if (signature) out += `📝 *Bio:* ${signature}\n`;
-        out += `\n🏆 *BR Rank:* ${brRankShow}${brPoints !== 'N/A' ? ` (${brPoints} pts)` : ''}\n`;
-        out += `🎯 *CS Rank:* ${csRankShow}${csPoints !== 'N/A' ? ` (${csPoints} pts)` : ''}\n`;
-        out += `\n🛡️ *Guild:* ${guildName}\n`;
-        if (guildName !== 'No Guild') {
-            out += `📊 *Guild Level:* ${guildLevel}\n`;
-            out += `👥 *Members:* ${guildMembers}\n`;
-        }
-        if (createAt !== 'N/A') out += `\n📅 *Account Created:* ${createAt}\n`;
-        if (lastLogin !== 'N/A') out += `⏱️ *Last Login:* ${lastLogin}\n`;
+        let out = `*🦋 𝗡𝗜𝗖 𝗗𝗲𝗰𝗼𝗱𝗲𝗿 𝗜𝗻𝘀𝗶𝗴𝗵𝘁𝘀 🦋*\n\n`;
+        out += `🆔 *NIC Number:* ${nicInput}\n`;
+        out += `📊 *Format Type:* ${nicType}\n`;
+        out += `🎂 *Date of Birth:* ${dob}\n`;
+        out += `👤 *Gender:* ${gender}\n`;
+        out += `⏳ *Current Age:* ${age}\n`;
+        out += `♌ *Zodiac Sign:* ${zodiac}\n`;
+        out += `🌐 *Generation:* ${generation}\n\n`;
+        out += `> 𝐊 𝐂𝐞𝐘 | 𝐃𝐞𝐯𝐑𝐚𝐛𝐛𝐢𝐭𝐙𝐳 🎀`;
 
         try { await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } }); } catch (_) {}
+        
         await socket.sendMessage(sender, {
             text: out.trim(),
             contextInfo: {
                 externalAdReply: {
-                    title: `Free Fire Player - ${nickname}`,
-                    body: `UID: ${uid}`,
-                    thumbnailUrl: akira,
+                    title: `NIC Decoder - ${nicInput}`,
+                    body: `Gender: ${gender} | Age: ${age}`,
+                    thumbnailUrl: akira, // ඔයාගේ Bot Thumbnail Variable එක මෙතනට දාන්න
                     sourceUrl: '',
                     mediaType: 1,
                     renderLargerThumbnail: true
@@ -2756,14 +2713,21 @@ case 'ff': {
         }, { quoted: msg });
 
     } catch (error) {
-        console.error('FF Info Error:', error.message);
+        console.error('NIC Decoder Error:', error.response?.data || error.message);
+        
+        // Timeout එකක් වුනොත් (Render Free Plan වල server එක sleep වෙන නිසා පළමු පාරේදී මේක වෙන්න පුළුවන්)
+        const isTimeout = error.message.includes('timeout') || error.code === 'ECONNABORTED';
         try { await socket.sendMessage(sender, { react: { text: '⚠️', key: msg.key } }); } catch (_) {}
+        
         await socket.sendMessage(sender, {
-            text: `⚠️ Error parsing player info: ${error.message}`
+            text: isTimeout 
+                ? `⚠️ API Timeout විය! Render Server එක අවදි වෙමින් පවතී. කරුණාකර තත්පර කිහිපයකින් නැවත උත්සාහ කරන්න.`
+                : `⚠️ Error decoding NIC: ${error.response?.data?.error || error.message}`
         }, { quoted: msg });
     }
     break;
 }
+
 
 // ════════════ Check mail ════════════
 case 'checkmail':
