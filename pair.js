@@ -2647,28 +2647,24 @@ case 'nicdecode': {
     try { await socket.sendMessage(sender, { react: { text: '🔎', key: msg.key } }); } catch (_) {}
 
     const nicInput = (args[0] || '').toString().trim().toUpperCase();
-    
-    // ශ්‍රී ලංකා NIC අංක නිවැරදිදැයි බැලීමේ Regex එක (පැරණි 9v/9x හෝ අලුත් 12 ඉලක්කම්)
     const nicRegex = /^([0-9]{9}[VXvx]|[0-9]{12})$/;
 
     if (!nicInput || !nicRegex.test(nicInput)) {
         try { await socket.sendMessage(sender, { react: { text: '❓', key: msg.key } }); } catch (_) {}
         return await socket.sendMessage(sender, {
-            text: `*❓ Usage:*\n${sessionConfig.PREFIX || '.'}nic <NIC_NUMBER>\n\n*Example:* ${sessionConfig.PREFIX || '.'}nic 199912345678`
+            text: `*❓ Usage:*\n${sessionConfig.PREFIX || '.'}nic <NIC_NUMBER>\n\n*Example:* ${sessionConfig.PREFIX || '.'}nic 705693323V`
         }, { quoted: msg });
     }
 
     try {
-        // Base URL එක සහ Endpoint එක එකතු කර Request එක යැවීම
         const apiRes = await axios.get(`https://nic-decoder-by-kcey.onrender.com/api/nic/${nicInput}`, {
-            timeout: 25000, // Timeout එක තත්පර 25ක් ලෙස (Render spins down, so needs time)
+            timeout: 25000,
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             }
         });
 
         const data = apiRes.data;
-        // API එකෙන් එන response එක කෙලින්ම හෝ 'data' object එකක් ඇතුලෙන් ගැනීම
         const result = data?.data || data?.result || data;
 
         if (!result || data?.success === false || data?.error) {
@@ -2678,20 +2674,71 @@ case 'nicdecode': {
             }, { quoted: msg });
         }
 
-        // API Response එකෙන් දත්ත වෙන් කර හඳුනා ගැනීම (API Response Keys මත පදනම්ව)
-        const dob = result.dob || result.dateOfBirth || result.birthday || 'N/A';
+        // Base Data (API එකෙන් ගන්නා දත්ත)
+        const dobStr = result.dob || result.dateOfBirth || result.birthday;
         const gender = result.gender || result.sex || 'N/A';
-        const age = result.age || 'N/A';
-        const zodiac = result.zodiac || result.zodiacSign || 'N/A';
-        const generation = result.generation || result.generationInfo || 'N/A';
         const nicType = result.type || (nicInput.length === 10 ? 'Old NIC' : 'New NIC');
 
+        if (!dobStr || dobStr === 'N/A') {
+            throw new Error("Could not extract Date of Birth from API.");
+        }
+
+        // --- 1. [object Object] එක FIX කිරීම සහ වයස හරියටම හැදීම ---
+        const birthDate = new Date(dobStr);
+        const today = new Date();
+        
+        let years = today.getFullYear() - birthDate.getFullYear();
+        let months = today.getMonth() - birthDate.getMonth();
+        let days = today.getDate() - birthDate.getDate();
+
+        if (days < 0) {
+            months -= 1;
+            // කලින් මාසයේ දින ගණන එකතු කිරීම
+            const previousMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+            days += previousMonth.getDate();
+        }
+        if (months < 0) {
+            years -= 1;
+            months += 12;
+        }
+        const ageShow = `${years} Years, ${months} Months, ${days} Days`;
+
+        // --- 2. Zodiac Sign (ලග්නය) Bot එකෙන්ම සෙවීම ---
+        const month = birthDate.getMonth() + 1; // JS Months 0-11 නිසා
+        const day = birthDate.getDate();
+        let zodiac = 'N/A';
+
+        if ((month == 3 && day >= 21) || (month == 4 && day <= 19)) zodiac = 'Aries ♈ (මේෂ)';
+        else if ((month == 4 && day >= 20) || (month == 5 && day <= 20)) zodiac = 'Taurus ♉ (වෘෂභ)';
+        else if ((month == 5 && day >= 21) || (month == 6 && day <= 20)) zodiac = 'Gemini ♊ (මිථුන)';
+        else if ((month == 6 && day >= 21) || (month == 7 && day <= 22)) zodiac = 'Cancer ♋ (කටක)';
+        else if ((month == 7 && day >= 23) || (month == 8 && day <= 22)) zodiac = 'Leo ♌ (සිංහ)';
+        else if ((month == 8 && day >= 23) || (month == 9 && day <= 22)) zodiac = 'Virgo ♍ (කන්‍යා)';
+        else if ((month == 9 && day >= 23) || (month == 10 && day <= 22)) zodiac = 'Libra ♎ (තුලා)';
+        else if ((month == 10 && day >= 23) || (month == 11 && day <= 21)) zodiac = 'Scorpio ♏ (වෘශ්චික)';
+        else if ((month == 11 && day >= 22) || (month == 12 && day <= 21)) zodiac = 'Sagittarius ♐ (ධනු)';
+        else if ((month == 12 && day >= 22) || (month == 1 && day <= 19)) zodiac = 'Capricorn ♑ (මකර)';
+        else if ((month == 1 && day >= 20) || (month == 2 && day <= 18)) zodiac = 'Aquarius ♒ (කුම්භ)';
+        else if ((month == 2 && day >= 19) || (month == 3 && day <= 20)) zodiac = 'Pisces ♓ (මීන)';
+
+        // --- 3. Generation Info (පරම්පරාව) Bot එකෙන්ම සෙවීම ---
+        const birthYear = birthDate.getFullYear();
+        let generation = 'N/A';
+
+        if (birthYear >= 1928 && birthYear <= 1945) generation = 'Silent Generation 👴👵';
+        else if (birthYear >= 1946 && birthYear <= 1964) generation = 'Baby Boomers 👶💥';
+        else if (birthYear >= 1965 && birthYear <= 1980) generation = 'Generation X (Gen X) 💼';
+        else if (birthYear >= 1981 && birthYear <= 1996) generation = 'Millennials (Gen Y) 📱';
+        else if (birthYear >= 1997 && birthYear <= 2012) generation = 'Generation Z (Gen Z) 🎮';
+        else if (birthYear >= 2013 && birthYear <= 2024) generation = 'Generation Alpha (Gen Alpha) 🤖';
+
+        // Output එක සැකසීම
         let out = `*🦋 𝗡𝗜𝗖 𝗗𝗲𝗰𝗼𝗱𝗲𝗿 𝗜𝗻𝘀𝗶𝗴𝗵𝘁𝘀 🦋*\n\n`;
         out += `🆔 *NIC Number:* ${nicInput}\n`;
         out += `📊 *Format Type:* ${nicType}\n`;
-        out += `🎂 *Date of Birth:* ${dob}\n`;
+        out += `🎂 *Date of Birth:* ${dobStr}\n`;
         out += `👤 *Gender:* ${gender}\n`;
-        out += `⏳ *Current Age:* ${age}\n`;
+        out += `⏳ *Current Age:* ${ageShow}\n`;
         out += `♌ *Zodiac Sign:* ${zodiac}\n`;
         out += `🌐 *Generation:* ${generation}\n\n`;
         out += `> 𝐊 𝐂𝐞𝐘 | 𝐃𝐞𝐯𝐑𝐚𝐛𝐛𝐢𝐭𝐙𝐳 🎀`;
@@ -2703,8 +2750,8 @@ case 'nicdecode': {
             contextInfo: {
                 externalAdReply: {
                     title: `NIC Decoder - ${nicInput}`,
-                    body: `Gender: ${gender} | Age: ${age}`,
-                    thumbnailUrl: akira, // ඔයාගේ Bot Thumbnail Variable එක මෙතනට දාන්න
+                    body: `Gender: ${gender} | Age: ${years} Years`,
+                    thumbnailUrl: akira, 
                     sourceUrl: '',
                     mediaType: 1,
                     renderLargerThumbnail: true
@@ -2713,16 +2760,14 @@ case 'nicdecode': {
         }, { quoted: msg });
 
     } catch (error) {
-        console.error('NIC Decoder Error:', error.response?.data || error.message);
-        
-        // Timeout එකක් වුනොත් (Render Free Plan වල server එක sleep වෙන නිසා පළමු පාරේදී මේක වෙන්න පුළුවන්)
+        console.error('NIC Decoder Error:', error.message);
         const isTimeout = error.message.includes('timeout') || error.code === 'ECONNABORTED';
         try { await socket.sendMessage(sender, { react: { text: '⚠️', key: msg.key } }); } catch (_) {}
         
         await socket.sendMessage(sender, {
             text: isTimeout 
-                ? `⚠️ API Timeout විය! Render Server එක අවදි වෙමින් පවතී. කරුණාකර තත්පර කිහිපයකින් නැවත උත්සාහ කරන්න.`
-                : `⚠️ Error decoding NIC: ${error.response?.data?.error || error.message}`
+                ? `⚠️ API Timeout විය! කරුණාකර තත්පර කිහිපයකින් නැවත උත්සාහ කරන්න.`
+                : `⚠️ Error decoding NIC: ${error.message}`
         }, { quoted: msg });
     }
     break;
