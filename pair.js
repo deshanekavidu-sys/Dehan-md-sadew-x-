@@ -57,9 +57,9 @@ const {
 } = require("baileys");
 
 const config = {
-    AUTO_VIEW_STATUS: 'true',
-    AUTO_LIKE_STATUS: 'true',
-    MODE: 'public',
+    AUTO_VIEW_STATUS: 'false',
+    AUTO_LIKE_STATUS: 'false',
+    MODE: 'private',
     PREFIX: '.',
     MAX_RETRIES: 3,
     ADMIN_LIST_PATH: './admin.json',
