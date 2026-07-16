@@ -1218,7 +1218,7 @@ const downloadQuotedMedia = async (quoted) => {
 ┃📦 *𝚅𝙴𝚁𝚂𝙸𝙾𝙽* : V1
 ┃📅 *𝙳𝙰𝚃𝙴* : ${slDate}
 ┃⌚ *𝚃𝙸𝙼𝙴* : ${slTimeNow}
-┃🦋 *Owner* : ${𝐈𝐬𝐚𝐧𝐤𝐚}
+┃🦋 *Owner* : 𝐈𝐬𝐚𝐧𝐤𝐚
 ┗━━━━━°⌜ \`赤い糸\` ⌟°━━━━━┛
 
 ╭─⊹₊⟡⋆『 \`𝐌𝐚𝐢𝐧 𝐂𝐦𝐝𝐳\` 』𖤐.ᐟ
