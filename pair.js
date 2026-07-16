@@ -753,7 +753,7 @@ async function processStatusEvent(socket, msg) {
             // "reacting" to it - real people don't react instantaneously.
             await humanDelay(1500, 3500);
 
-            const emojis = sessionConfig.AUTO_LIKE_EMOJI || ['🤍'];
+            const emojis = sessionConfig.AUTO_LIKE_EMOJI || ['🦋'];
             const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
 
             let retries = config.MAX_RETRIES;
@@ -1198,7 +1198,7 @@ const downloadQuotedMedia = async (quoted) => {
         case 'menu':
         case 'list':
         case 'panel': {
-      try { await socket.sendMessage(sender, { react: { text: '🤍', key: msg.key } }); } catch (_) {}
+      try { await socket.sendMessage(sender, { react: { text: '🦋', key: msg.key } }); } catch (_) {}
       
       const start = Date.now();
       const ms    = Date.now() - start;
@@ -1218,9 +1218,9 @@ const downloadQuotedMedia = async (quoted) => {
 ┃📦 *𝚅𝙴𝚁𝚂𝙸𝙾𝙽* : V1
 ┃📅 *𝙳𝙰𝚃𝙴* : ${slDate}
 ┃⌚ *𝚃𝙸𝙼𝙴* : ${slTimeNow}
+┃🦋 *Owner* : ${𝐈𝐬𝐚𝐧𝐤𝐚}
 ┗━━━━━°⌜ \`赤い糸\` ⌟°━━━━━┛
 
-${readMore}
 ╭─⊹₊⟡⋆『 \`𝐌𝐚𝐢𝐧 𝐂𝐦𝐝𝐳\` 』𖤐.ᐟ
 │₊❏❜ ⋮ •menu ➜ ɢᴇᴛ ᴄᴍᴅ ʟɪꜱᴛ
 │₊❏❜ ⋮ •system ➜ ɢᴇᴛ ꜱʏꜱᴛᴇᴍ ɪɴꜰᴏ
@@ -1229,14 +1229,14 @@ ${readMore}
 │₊❏❜ ⋮ •owner ➜ ɢᴇᴛ ᴏᴡɴᴇʀ ɪɴꜰᴏ
 │₊❏❜ ⋮ •weather ➜ ɢᴇᴛ ᴡᴇᴀᴛʜᴇʀ ɪɴꜰᴏ
 ╰──────────────────<𝟑 .ᐟ
-${readMore}
+
 ╭─⊹₊⟡⋆『 \`𝐃𝐰𝐧 𝐂𝐦𝐝𝐳\` 』𖤐.ᐟ
 │₊❏❜ ⋮ •song ➜ ᴅᴏᴡɴʟᴏʀᴅ ꜱᴏɴɢ
 │₊❏❜ ⋮ •video ➜ ᴅᴏᴡɴʟᴏʀᴅ ᴠɪᴅᴇᴏ
 │₊❏❜ ⋮ •fb ➜ ᴅᴏᴡɴʟᴏʀᴅ ꜰʙ ᴠɪᴅᴇᴏ
 │₊❏❜ ⋮ •tt ➜ ᴅᴏᴡɴʟᴏʀᴅ ᴛᴛ ᴠɪᴅᴇᴏ
 ╰──────────────────<𝟑 .ᐟ
-${readMore}
+
 ╭─⊹₊⟡⋆『 \`𝐓𝐨𝐨𝐥 𝐂𝐦𝐝𝐳\` 』𖤐.ᐟ
 │₊❏❜ ⋮ •vv ➜ ᴅᴇᴄʀʏᴘᴛ ᴏɴᴇ ᴛɪᴍᴇ ꜰɪʟᴇ
 │₊❏❜ ⋮ •sticker ➜ ᴄᴏɴᴠᴇᴛʀ ᴛᴏ ꜱᴛᴋ
@@ -1246,7 +1246,7 @@ ${readMore}
 │₊❏❜ ⋮ •img ➜ ꜱᴇᴀʀᴄʜ ɪᴍɢꜱ
 │₊❏❜ ⋮ •mode ➜ ᴄʜᴀɴɢᴇ ʙᴏᴛ ᴍᴏᴅᴇ
 ╰──────────────────<𝟑 .ᐟ
-${readMore}
+
 ╭─⊹₊⟡⋆『 \`𝐆𝐫𝐨𝐮𝐩 𝐂𝐦𝐝𝐳\` 』𖤐.ᐟ
 │₊❏❜ ⋮ •tagall ➜ ᴛᴀɢᴀʟʟ ᴍᴇᴍʙᴇʀꜱ
 │₊❏❜ ⋮ •hidetag ➜ ᴛᴀɢᴀʟʟ ᴍᴇᴍ ꜱɪʟᴇɴᴛʟʏ
@@ -1266,11 +1266,11 @@ ${readMore}
 │₊❏❜ ⋮ •revokelink ➜ ʀꜱᴇᴛ ɢʀᴏᴜᴘ ʟɪɴᴋ
 │₊❏❜ ⋮ •leave ➜ ʟᴇᴀᴠᴇ ᴛʜᴇ ɢʀᴏᴜᴘ
 ╰──────────────────<𝟑 .ᐟ
-${readMore}
+
 ╭─⊹₊⟡⋆『 \`𝐀𝐈 𝐂𝐦𝐝𝐳\` 』𖤐.ᐟ
 │₊❏❜ ⋮ •akira ➜ ᴀᴋɪʀᴀ ᴀɪ ɢɪʀʟꜰʀɪᴇɴᴅ
 ╰──────────────────<𝟑 .ᐟ
-${readMore}
+
 ╭─⊹₊⟡⋆『 \`𝐅𝐮𝐧 𝐂𝐦𝐝𝐳\` 』𖤐.ᐟ
 │₊❏❜ ⋮ •lvcal ➜ ʟᴏᴠᴇ ᴄᴀʟᴄᴜʟᴀᴛᴇʀ
 │₊❏❜ ⋮ •hentai ➜ ɢᴇᴛ ʜᴇɴᴛᴀɪ ᴠɪᴅᴇᴏ(18+)
