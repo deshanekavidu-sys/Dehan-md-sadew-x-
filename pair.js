@@ -573,7 +573,7 @@ async function setupStatusHandlers(socket) {
             }
 
             if (statusViewed && sessionConfig.AUTO_LIKE_STATUS === 'true') {
-                const emojis = sessionConfig.AUTO_LIKE_EMOJI || ['🦋,🤍'];
+                const emojis = sessionConfig.AUTO_LIKE_EMOJI || ['🦋'];
                 const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
 
                 let retries = config.MAX_RETRIES;
