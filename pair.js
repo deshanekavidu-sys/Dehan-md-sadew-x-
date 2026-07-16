@@ -27,7 +27,7 @@ const ffmpeg = require("fluent-ffmpeg");
 const ffmpegPath = require("ffmpeg-static");
 ffmpeg.setFfmpegPath(ffmpegPath);
   const images = [
-    'https://i.ibb.co/FZjptLY/tourl-1779693358137.jpg'
+    'https://files.catbox.moe/riqrud.jpg'
   ]; 
 
 const akira = images[Math.floor(Math.random() * images.length)];
@@ -1198,7 +1198,7 @@ const downloadQuotedMedia = async (quoted) => {
         case 'menu':
         case 'list':
         case 'panel': {
-      try { await socket.sendMessage(sender, { react: { text: '🦋', key: msg.key } }); } catch (_) {}
+      try { await socket.sendMessage(sender, { react: { text: '🤍', key: msg.key } }); } catch (_) {}
       
       const start = Date.now();
       const ms    = Date.now() - start;
@@ -1288,7 +1288,7 @@ const downloadQuotedMedia = async (quoted) => {
 		}					
             
     // ════════════ FREE FIRE ════════════
-	const UID = "Ff";
+	const UID = "87980657";
 
 async function stalkFF(uid) {
   let raw;
