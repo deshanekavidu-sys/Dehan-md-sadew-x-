@@ -1147,9 +1147,16 @@ case 'ytmp3': {
 
         try { await socket.sendMessage(sender, { react: { text: '🔎', key: msg.key } }); } catch (_) {}
 
-        const search = await yts(query);
-        const video = search.videos[0]; 
+        // 1) Search video
+        let search;
+        try {
+            search = await yts(query);
+        } catch (e) {
+            console.log("YTS SEARCH ERROR:", e);
+            return reply("❌ *Search Failed, Try Again Later !*");
+        }
 
+        const video = search?.videos?.[0];
         if (!video) return reply("❌ *I Cant Find It !*");
 
         const slDate = moment().tz('Asia/Colombo').format('YYYY-MM-DD');
@@ -1164,22 +1171,92 @@ case 'ytmp3': {
                         `> *\`⌚ 𝚃𝙸𝙼𝙴 :\`* ${slTimeNow}\n\n` +
                         `> *𝗔esthatic 𝗤ueen 𝗕y 𝗖hamod 𝜗𝜚⋆*`;
 
-        await socket.sendMessage(sender, {
+        // Fire thumbnail send WITHOUT waiting for it — runs in parallel with download below
+        const thumbnailPromise = socket.sendMessage(sender, {
             image: { url: video.thumbnail },
             caption: caption,
             contextInfo: arabianCtx()
-        }, { quoted: msg });
+        }, { quoted: msg }).catch(e => {
+            console.log("THUMBNAIL SEND ERROR:", e);
+            // not fatal
+        });
 
-        const ytRes = await axios.get(`https://ytdl-new-dxz.vercel.app/api/ytmp3?url=${encodeURIComponent(video.url)}`);
-        const downloadUrl = ytRes.data.download_url || ytRes.data.result || ytRes.data.url;
+        // 2) Try multiple download APIs (fallback chain) — runs concurrently with thumbnail send
+        const apiList = [
+            `https://ytdl-new-dxz.vercel.app/api/ytmp3?url=${encodeURIComponent(video.url)}`,
+            `https://api.davidcyriltech.my.id/download/ytmp3?url=${encodeURIComponent(video.url)}`,
+            `https://apis.ryzendesu.vip/api/downloader/ytmp3?url=${encodeURIComponent(video.url)}`
+        ];
 
-        if (!downloadUrl) return reply("❌ *I cant get MP3 !*");
+        let downloadUrl = null;
 
-        await socket.sendMessage(sender, {
-            audio: { url: downloadUrl },
-            mimetype: 'audio/mpeg',
-            ptt: false
-        }, { quoted: msg });
+        for (const apiUrl of apiList) {
+            try {
+                const ytRes = await axios.get(apiUrl, {
+                    timeout: 8000, // reduced from 25s — fail fast, move to next API
+                    headers: { 'User-Agent': 'Mozilla/5.0' }
+                });
+
+                const data = ytRes.data;
+                const candidate =
+                    data?.download_url ||
+                    data?.result?.download_url ||
+                    data?.result?.url ||
+                    data?.result ||
+                    data?.url;
+
+                if (candidate && typeof candidate === 'string' && candidate.startsWith('http')) {
+                    downloadUrl = candidate;
+                    break;
+                }
+            } catch (e) {
+                console.log(`YTMP3 API FAILED (${apiUrl}):`, e.message);
+                continue; // try next API
+            }
+        }
+
+        // make sure thumbnail send has finished before we move on (it should already be done or close)
+        await thumbnailPromise;
+
+        if (!downloadUrl) return reply("❌ *All Download Servers Failed, Try Again Later !*");
+
+        // 3) Download as buffer (more reliable than passing remote URL directly)
+        let audioBuffer;
+        try {
+            const fileRes = await axios.get(downloadUrl, {
+                responseType: 'arraybuffer',
+                timeout: 20000, // reduced from 60s — most songs finish well within this
+                headers: { 'User-Agent': 'Mozilla/5.0' }
+            });
+
+            const contentType = fileRes.headers['content-type'] || '';
+            if (!contentType.includes('audio') && !contentType.includes('octet-stream')) {
+                console.log("UNEXPECTED CONTENT-TYPE:", contentType);
+                return reply("❌ *Download Server Returned Invalid File !*");
+            }
+
+            audioBuffer = Buffer.from(fileRes.data);
+
+            // WhatsApp file size safety check (~64MB practical limit)
+            if (audioBuffer.length < 1000) {
+                return reply("❌ *Downloaded File Is Empty / Broken !*");
+            }
+        } catch (e) {
+            console.log("AUDIO DOWNLOAD ERROR:", e.message);
+            return reply("❌ *Failed To Download Audio File !*");
+        }
+
+        // 4) Send audio buffer
+        try {
+            await socket.sendMessage(sender, {
+                audio: audioBuffer,
+                mimetype: 'audio/mpeg',
+                ptt: false
+            }, { quoted: msg });
+        } catch (e) {
+            console.log("AUDIO SEND ERROR:", e);
+            return reply("❌ *Failed To Send Audio !*");
+        }
 
         try { await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } }); } catch (_) {}
 
@@ -1189,7 +1266,6 @@ case 'ytmp3': {
     }
     break;
 }
-
 					
 // ════════════ VIDEO ════════════
 
@@ -1580,38 +1656,74 @@ case 'img': {
 
     case 'getdp':
     case 'pfp': {
-      try {
+    try {
         const qCtx = msg.message?.extendedTextMessage?.contextInfo;
+
+        // Correct "who actually sent this" resolution.
+        // In groups, `sender` is usually the GROUP jid, not the user — use participant instead.
+        const realSender = msg.key.participant || msg.key.remoteJid;
+
         let target;
         if (qCtx?.mentionedJid?.[0]) {
-          target = qCtx.mentionedJid[0];
+            target = qCtx.mentionedJid[0];
         } else if (qCtx?.participant) {
-          target = qCtx.participant;
-        } else if (args[0]?.replace(/[^0-9]/g, '')) {
-          target = args[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net';
-        } else {
-          target = sender;
+            target = qCtx.participant;
+        } else if (args[0]) {
+            const digits = args[0].replace(/[^0-9]/g, '');
+            if (digits) target = digits + '@s.whatsapp.net';
         }
+
+        if (!target) target = realSender;
+
+        // Normalize jid (handles @lid / weird formats WhatsApp multi-device sometimes sends)
+        try {
+            if (typeof jidNormalizedUser === 'function') {
+                target = jidNormalizedUser(target);
+            }
+        } catch (_) { /* ignore, fall back to raw target */ }
+
+        // Fetch with a timeout so the command can't hang forever
+        const withTimeout = (promise, ms) =>
+            Promise.race([
+                promise,
+                new Promise((_, rej) => setTimeout(() => rej(new Error('TIMEOUT')), ms))
+            ]);
 
         let dpUrl;
         try {
-          dpUrl = await socket.profilePictureUrl(target, 'image');
+            dpUrl = await withTimeout(socket.profilePictureUrl(target, 'image'), 10000);
         } catch (e) {
-          return reply('No DP or Privacy protected');
+            console.log("PFP FETCH ERROR:", e?.message || e);
+
+            if (e?.message === 'TIMEOUT') {
+                return reply('⌛ *Request Timed Out, Try Again !*');
+            }
+
+            const code = e?.output?.statusCode || e?.status;
+            if (code === 401 || code === 403) {
+                return reply('🔒 *Privacy Protected — Cannot View This DP !*');
+            }
+            if (code === 404) {
+                return reply('❌ *No Profile Picture Set !*');
+            }
+            return reply('❌ *No DP Found Or Privacy Protected !*');
         }
 
-        await socket.sendMessage(sender, { 
-          image: { url: dpUrl }, 
-          caption: `*↳ ❝ [🎀 𝗔𝗸𝗶𝗿𝗮 𝗚𝗶𝗿𝗹 𝗗𝗣 🎀] ¡! ❞*\n\n📷 Profile picture of @${target.split('@')[0]}`, 
-          mentions: [target] 
+        if (!dpUrl) return reply('❌ *No Profile Picture Set !*');
+
+        await socket.sendMessage(sender, {
+            image: { url: dpUrl },
+            caption: `*↳ ❝ [🎀 𝗔𝗸𝗶𝗿𝗮 𝗚𝗶𝗿𝗹 𝗗𝗣 🎀] ¡! ❞*\n\n📷 Profile picture of @${target.split('@')[0]}`,
+            mentions: [target],
+            contextInfo: typeof arabianCtx === 'function' ? arabianCtx() : undefined
         }, { quoted: msg });
 
-      } catch (err) {
-        console.error(err);
-        reply('Known Error');
-      }
-      break;
+    } catch (err) {
+        console.error("GETDP CMD ERROR:", err);
+        reply('❌ *Something Went Wrong, Try Again !*');
     }
+    break;
+}
 
 
 // ════════════ STICKER ════════════
