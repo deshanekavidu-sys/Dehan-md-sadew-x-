@@ -1059,22 +1059,24 @@ const downloadQuotedMedia = async (quoted) => {
       break;
     }
 // ════════════ VV ════════════
-					
-  // === මෙය ඔබේ Message Handler එකේ (command switch-case එකට පෙර හෝ text/command හඳුනාගන්නා ස්ථානයේ) ඇතුළත් කරන්න ===
-// පරිශීලකයා එවූ පෙළ (text/body) ලබා ගැනීම
+// === 1. මෙම ගෝලීය විචල්‍යය (Global Cache) ඔබේ index.js ගොනුවේ ඉහළින්ම ඇතුළත් කරන්න ===
+if (!global.vvCache) {
+    global.vvCache = {};
+}
+
+// === 2. ඔබේ Command Handler (case / if-else) එක තුළට පහත කොටස ඇතුළත් කරන්න ===
+
+// පරිශීලකයා එවූ පෙළ ලබා ගැනීම
 const body = msg.message?.conversation || msg.message?.extendedTextMessage?.text || "";
 const prefix = /^[°•π÷×¶∆£¢€¥®™✓_=|~!?@#$%^&.\/\\©^]/.test(body) ? body.match(/^[°•π÷×¶∆£¢€¥®™✓_=|~!?@#$%^&.\/\\©^]/)[0] : '';
 const cmd = body.startsWith(prefix) ? body.slice(prefix.length).trim().split(/ +/).shift().toLowerCase() : body.trim();
 
-// Regex එකකින් පරීක්ෂා කරනවා එවූ පෙළෙහි හරියටම ඉමොජි 3ක් පමණක් තිබේද කියා
-// මෙමඟින් ඕනෑම ඉමොජි 3ක් reply කළ විට ක්‍රියාත්මක වේ.
+// ඉමොජි 3ක් පමණක් තිබේදැයි පරීක්ෂා කිරීමේ Regex එක
 const emojiRegex = /^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F){3}$/u;
 const isThreeEmojis = emojiRegex.test(body.trim());
 
-// Command එක '.vv' හෝ '.viewonce' හෝ 'ඉමොජි 3ක්' නම් trigger වීම සඳහා:
+// Trigger වීමට අවශ්‍ය කොන්දේසි
 const isVvCommand = (cmd === 'vv' || cmd === 'viewonce' || isThreeEmojis);
-
-// === Switch-Case හෝ Conditional Block එක තුළ භාවිතා කිරීමට කේතය ===
 
 if (isVvCommand) {
     try {
@@ -1082,15 +1084,13 @@ if (isVvCommand) {
         const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
         
         if (!quotedMsg) {
-            // පරිශීලකයා ඉමොජි 3ක් එව්වත් එය view once එකකට reply එකක් නොවේ නම් සාමාන්‍ය පරිදි ignore කරයි 
-            // නැතහොත් command එකක් ලෙස (.vv) එවා ඇත්නම් පමණක් message එකක් පෙන්වයි.
             if (!isThreeEmojis) {
                 return reply('❌ *කරුණාකර View Once (Photo/Video) පණිවිඩයකට Reply කර මෙම Command එක භාවිතා කරන්න!*');
             }
-            return; // ඉමොජි 3ක් නිකන්ම එවා ඇත්නම් ignore කරයි
+            return; // නිකන්ම ඉමොජි 3ක් එවා ඇත්නම් ignore කරයි
         }
 
-        // View once message එකක්දැයි පරීක්ෂා කිරීම (Photo හෝ Video)
+        // View once පණිවිඩයක්දැයි බැලීම
         const viewOnceContent = quotedMsg.viewOnceMessageV2?.message || quotedMsg.viewOnceMessage?.message;
         
         if (!viewOnceContent) {
@@ -1100,7 +1100,6 @@ if (isVvCommand) {
             return;
         }
 
-        // පණිවිඩ වර්ගය හඳුනා ගැනීම (Image හෝ Video)
         const isImage = !!viewOnceContent.imageMessage;
         const isVideo = !!viewOnceContent.videoMessage;
 
@@ -1111,18 +1110,35 @@ if (isVvCommand) {
             return;
         }
 
-        // Reply කර ඇති පණිවිඩයේ ID එක ලබා ගැනීම
-        const quotedMessageId = msg.message?.extendedTextMessage?.contextInfo?.stanzaId;
+        const mediaMessage = isImage ? viewOnceContent.imageMessage : viewOnceContent.videoMessage;
+
+        // --- BACKGROUND DOWNLOAD ක්‍රියාවලිය ---
+        // බොත්තම ඔබන්නට පෙරම අප media එක download කර cache එකේ තබා ගනිමු
+        const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
+        const mediaType = isImage ? 'image' : 'video';
         
+        const stream = await downloadContentFromMessage(mediaMessage, mediaType);
+        let buffer = Buffer.from([]);
+        for await (const chunk of stream) {
+            buffer = Buffer.concat([buffer, chunk]);
+        }
+
+        // පරිශීලකයාගේ JID එක අනුව තාවකාලිකව cache එකේ buffer එක තැන්පත් කිරීම
+        global.vvCache[sender] = {
+            buffer: buffer,
+            type: mediaType,
+            mimetype: mediaMessage.mimetype || (isImage ? 'image/jpeg' : 'video/mp4')
+        };
+
         // Buttons Setup
         const buttons = [
             { 
-                buttonId: `.download_vv hd ${quotedMessageId}`, 
+                buttonId: '.download_vv hd', 
                 buttonText: { displayText: '✨ HD Quality' }, 
                 type: 1 
             },
             { 
-                buttonId: `.download_vv normal ${quotedMessageId}`, 
+                buttonId: '.download_vv normal', 
                 buttonText: { displayText: '🖼️ Normal Quality' }, 
                 type: 1 
             },
@@ -1149,62 +1165,53 @@ if (isVvCommand) {
     }
 }
 
-// === BUTTONS ක්‍රියාත්මක වීමට සහ Media එක Download කර යැවීමට මෙම Case එක switch එක ඇතුළත තබන්න ===
+// === 3. Buttons ක්‍රියාත්මක වන Switch Case එක තුළට පහත කොටස ඇතුළත් කරන්න ===
 
 switch (cmd) {
     case 'download_vv': {
         try {
             const quality = args[0]; // hd හෝ normal
-            const targetMsgId = args[1]; // target message id
-
-            if (!quality || !targetMsgId) return reply('❌ *අදාළ තොරතුරු සොයාගත නොහැක!*');
-
-            // Quoted message එකෙන් media එක retrieve කර ගැනීම
-            const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-            const viewOnceContent = quotedMsg?.viewOnceMessageV2?.message || quotedMsg?.viewOnceMessage?.message;
-
-            if (!viewOnceContent) {
-                return reply('❌ *Media එක ලබා ගැනීමට නොහැකි විය. කරුණාකර නැවත Reply කර උත්සාහ කරන්න!*');
-            }
-
-            const isImage = !!viewOnceContent.imageMessage;
-            const mediaMessage = isImage ? viewOnceContent.imageMessage : viewOnceContent.videoMessage;
-
-            reply(`⏳ *Downloading ${quality.toUpperCase()} Quality Media...*`);
-
-            // Baileys media downloader
-            const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
-            const mediaType = isImage ? 'image' : 'video';
             
-            const stream = await downloadContentFromMessage(mediaMessage, mediaType);
-            let buffer = Buffer.from([]);
-            for await (const chunk of stream) {
-                buffer = Buffer.concat([buffer, chunk]);
+            // Cache එකෙන් අදාළ media data ලබා ගැනීම
+            const cachedData = global.vvCache[sender];
+
+            if (!cachedData) {
+                return reply('❌ *කාලය ඉකුත් වී ඇත! කරුණාකර නැවත View Once පණිවිඩයට Reply කර උත්සාහ කරන්න.*');
             }
 
+            const { buffer, type, mimetype } = cachedData;
+            const isImage = type === 'image';
             const qualityText = quality === 'hd' ? '✨ HD Quality (Original)' : '🖼️ Normal Quality (Compressed)';
 
+            reply(`⏳ *Sending ${quality.toUpperCase()} Quality Media...*`);
+
+            // Media එක යැවීම
             if (isImage) {
                 await socket.sendMessage(sender, {
                     image: buffer,
+                    mimetype: mimetype,
                     caption: `*↳ ❝ [🎀 𝗔𝗸𝗶𝗿𝗮 𝗩𝗩 𝗕𝘆𝗽𝗮𝘀𝘀 🎀] ¡! ❞*\n\nQuality: *${qualityText}*\n\n📷 Bypass successfully!`,
                     contextInfo: typeof arabianCtx === 'function' ? arabianCtx() : undefined
                 }, { quoted: msg });
             } else {
                 await socket.sendMessage(sender, {
                     video: buffer,
+                    mimetype: mimetype,
                     caption: `*↳ ❝ [🎀 𝗔𝗸𝗶𝗿𝗮 𝗩𝗩 𝗕𝘆𝗽𝗮𝘀𝘀 🎀] ¡! ❞*\n\nQuality: *${qualityText}*\n\n🎥 Bypass successfully!`,
                     contextInfo: typeof arabianCtx === 'function' ? arabianCtx() : undefined
                 }, { quoted: msg });
             }
 
+            // යැවීමෙන් පසු මතකය නිදහස් කිරීමට cache එකෙන් ඉවත් කිරීම
+            delete global.vvCache[sender];
+
         } catch (err) {
             console.error("DOWNLOAD VV ERROR:", err);
-            reply('❌ *Media එක download කිරීමට නොහැකි විය!*');
+            reply('❌ *Media එක download කිරීමට හෝ යැවීමට නොහැකි විය!*');
         }
         break;
     }
-			}					
+}		
 // ════════════ ALIVE ════════════
 
 case 'alive': {
