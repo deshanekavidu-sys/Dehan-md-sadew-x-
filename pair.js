@@ -1694,12 +1694,11 @@ case 'img': {
 // ════════════ GETDP ════════════
 
     case 'getdp':
-    case 'pfp': {
+case 'pfp': {
     try {
         const qCtx = msg.message?.extendedTextMessage?.contextInfo;
 
         // Correct "who actually sent this" resolution.
-        // In groups, `sender` is usually the GROUP jid, not the user — use participant instead.
         const realSender = msg.key.participant || msg.key.remoteJid;
 
         let target;
@@ -1714,48 +1713,46 @@ case 'img': {
 
         if (!target) target = realSender;
 
-        // Normalize jid (handles @lid / weird formats WhatsApp multi-device sometimes sends)
+        // Normalize jid (handles @lid / weird formats)
         try {
             if (typeof jidNormalizedUser === 'function') {
                 target = jidNormalizedUser(target);
             }
-        } catch (_) { /* ignore, fall back to raw target */ }
+        } catch (_) { /* ignore */ }
 
-        // Fetch with a timeout so the command can't hang forever
-        const withTimeout = (promise, ms) =>
-            Promise.race([
-                promise,
-                new Promise((_, rej) => setTimeout(() => rej(new Error('TIMEOUT')), ms))
-            ]);
+        // target එක helper function වලට යැවීමට query parameter එකක් ලෙස parse කරමු
+        const targetNumber = target.split('@')[0];
 
-        let dpUrl;
-        try {
-            dpUrl = await withTimeout(socket.profilePictureUrl(target, 'image'), 10000);
-        } catch (e) {
-            console.log("PFP FETCH ERROR:", e?.message || e);
-
-            if (e?.message === 'TIMEOUT') {
-                return reply('⌛ *Request Timed Out, Try Again !*');
+        // WhatsApp interactive buttons setup (Buttons structured for Baileys)
+        // Note: Buttons format can vary slightly depending on your Baileys version (standard buttons / template buttons)
+        const buttons = [
+            { 
+                buttonId: `.getdp_hd ${target}`, // HD DP එක ලබාගැනීමට
+                buttonText: { displayText: '✨ HD Quality' }, 
+                type: 1 
+            },
+            { 
+                buttonId: `.getdp_normal ${target}`, // Normal DP එක ලබාගැනීමට
+                buttonText: { displayText: '🖼️ Normal Quality' }, 
+                type: 1 
+            },
+            { 
+                buttonId: '.owner', // Owner command එක auto trigger කිරීමට
+                buttonText: { displayText: '👑 Owner Info' }, 
+                type: 1 
             }
+        ];
 
-            const code = e?.output?.statusCode || e?.status;
-            if (code === 401 || code === 403) {
-                return reply('🔒 *Privacy Protected — Cannot View This DP !*');
-            }
-            if (code === 404) {
-                return reply('❌ *No Profile Picture Set !*');
-            }
-            return reply('❌ *No DP Found Or Privacy Protected !*');
-        }
-
-        if (!dpUrl) return reply('❌ *No Profile Picture Set !*');
-
-        await socket.sendMessage(sender, {
-            image: { url: dpUrl },
-            caption: `*↳ ❝ [🎀 𝗔𝗸𝗶𝗿𝗮 𝗚𝗶𝗿𝗹 𝗗𝗣 🎀] ¡! ❞*\n\n📷 Profile picture of @${target.split('@')[0]}`,
+        const buttonMessage = {
+            text: `*↳ ❝ [🎀 𝗔𝗸𝗶𝗿𝗮 𝗚𝗶𝗿𝗹 𝗗𝗣 🎀] ¡! ❞*\n\nSelect the quality you want to download for @${targetNumber} or contact Owner.`,
+            footer: 'Akira MD Bot DP Downloader',
+            buttons: buttons,
+            headerType: 1,
             mentions: [target],
             contextInfo: typeof arabianCtx === 'function' ? arabianCtx() : undefined
-        }, { quoted: msg });
+        };
+
+        await socket.sendMessage(sender, buttonMessage, { quoted: msg });
 
     } catch (err) {
         console.error("GETDP CMD ERROR:", err);
@@ -1764,6 +1761,52 @@ case 'img': {
     break;
 }
 
+// === BUTTONS ක්‍රියාත්මක වීමට පහත SUB-CASES දෙක ඔබේ switch-case එකට එකතු කරන්න ===
+
+case 'getdp_hd': {
+    if (!args[0]) return reply('❌ *Target user not specified!*');
+    const target = args[0];
+    const targetNumber = target.split('@')[0];
+    reply('⏳ *Fetching HD Profile Picture...*');
+    
+    try {
+        const dpUrl = await socket.profilePictureUrl(target, 'image').catch(() => null);
+        if (!dpUrl) return reply('❌ *No Profile Picture Set or Privacy Protected!*');
+
+        await socket.sendMessage(sender, {
+            image: { url: dpUrl },
+            caption: `*↳ ❝ [🎀 𝗔𝗸𝗶𝗿𝗮 𝗚𝗶𝗿𝗹 𝗗𝗣 - 𝗛𝗗 🎀] ¡! ❞*\n\n📷 HD Profile picture of @${targetNumber}`,
+            mentions: [target],
+            contextInfo: typeof arabianCtx === 'function' ? arabianCtx() : undefined
+        }, { quoted: msg });
+    } catch (e) {
+        reply('❌ *Error fetching HD DP! Privacy protection might be active.*');
+    }
+    break;
+}
+
+case 'getdp_normal': {
+    if (!args[0]) return reply('❌ *Target user not specified!*');
+    const target = args[0];
+    const targetNumber = target.split('@')[0];
+    reply('⏳ *Fetching Normal Quality Profile Picture...*');
+
+    try {
+        // 'preview' parameter gets the lower resolution/compressed avatar
+        const dpUrl = await socket.profilePictureUrl(target, 'preview').catch(() => null);
+        if (!dpUrl) return reply('❌ *No Profile Picture Set or Privacy Protected!*');
+
+        await socket.sendMessage(sender, {
+            image: { url: dpUrl },
+            caption: `*↳ ❝ [🎀 𝗔𝗸𝗶𝗿𝗮 𝗚𝗶𝗿𝗹 𝗗𝗣 - 𝗡𝗼𝗿𝗺𝗮𝗹 🎀] ¡! ❞*\n\n📷 Normal Profile picture of @${targetNumber}`,
+            mentions: [target],
+            contextInfo: typeof arabianCtx === 'function' ? arabianCtx() : undefined
+        }, { quoted: msg });
+    } catch (e) {
+        reply('❌ *Error fetching Normal DP!*');
+    }
+    break;
+}
 
 // ════════════ STICKER ════════════
       
