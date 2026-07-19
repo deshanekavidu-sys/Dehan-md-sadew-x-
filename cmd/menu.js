@@ -37,7 +37,7 @@ const CATEGORIES = [
       { title: 'getdp',   id: 'getdp',   description: 'ɢᴇᴛ ᴡʜ ᴘʀᴏꜰɪʟᴇ ᴘʜᴏᴛᴏ' },
       { title: 'npm',     id: 'npm',     description: 'ꜱᴇᴀʀᴄʜ ɴᴘᴍ ᴘᴋɢꜱ' },
       { title: 'img',     id: 'img',     description: 'ꜱᴇᴀʀᴄʜ ɪᴍɢꜱ' },
-      { title: 'Link short',     id: 'short',     description: 'ʟᴏɴɢ ʟɪɴᴋ ꜱʜᴏʀᴛ' },
+      { title: 'short',     id: 'short',     description: 'ʟᴏɴɢ ʟɪɴᴋ ꜱʜᴏʀᴛ' },
     ],
   },
   {
@@ -54,7 +54,7 @@ const CATEGORIES = [
       { title: 'unlockgroup', id: 'unlockgroup', description: 'ᴜɴʟᴏᴄᴋ ᴛʜᴇ ɢʀᴏᴜᴘ' },
       { title: 'mute',        id: 'mute',        description: 'ᴍᴜᴛᴇ ᴛʜᴇ ɢʀᴏᴜᴘ' },
       { title: 'unmute',      id: 'unmute',      description: 'ᴜɴᴍᴜᴛᴇ ᴛʜᴇ ɢʀᴏᴜᴘ' },
-      { title: 'setname',     id: 'setname',   g  description: 'ꜱᴇᴛ ɢʀᴏᴜᴘ ɴᴀᴍᴇ' },
+      { title: 'setname',     id: 'setname',     description: 'ꜱᴇᴛ ɢʀᴏᴜᴘ ɴᴀᴍᴇ' },
       { title: 'setdesc',     id: 'setdesc',     description: 'ꜱᴇᴛ ɢʀᴏᴜᴘ ᴅᴇꜱᴄ' },
       { title: 'seticon',     id: 'seticon',     description: 'ꜱᴇᴛ ɢʀᴏᴜᴘ ɪᴄᴏɴ' },
       { title: 'linkgroup',   id: 'linkgroup',   description: 'ɢᴇᴛ ɢʀᴏᴜᴘ ʟɪɴᴋ' },
