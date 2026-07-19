@@ -12,68 +12,68 @@ const CATEGORIES = [
   {
     title: '𝐌𝐚𝐢𝐧 𝐂𝐦𝐝𝐳',
     rows: [
-      { title: 'menu',  id: '.menu',  description: 'ɢᴇᴛ ᴄᴍᴅ ʟɪꜱᴛ' },
-      { title: 'system', id: '.system', description: 'ɢᴇᴛ ꜱʏꜱᴛᴇᴍ ɪɴꜰᴏ' },
-      { title: 'ping',  id: '.ping',  description: 'ɢᴇᴛ ʙᴏᴛ ꜱᴘᴇᴇᴅ' },
-      { title: 'alive', id: '.alive', description: 'ᴄʜᴇᴄᴋ ʙᴏᴛ ᴀʟɪᴠᴇ' },
-      { title: 'owner', id: '.owner', description: 'ɢᴇᴛ ᴏᴡɴᴇʀ ɪɴꜰᴏ' },
+      { title: 'menu',  id: 'menu',  description: 'ɢᴇᴛ ᴄᴍᴅ ʟɪꜱᴛ' },
+      { title: 'system', id: 'system', description: 'ɢᴇᴛ ꜱʏꜱᴛᴇᴍ ɪɴꜰᴏ' },
+      { title: 'ping',  id: 'ping',  description: 'ɢᴇᴛ ʙᴏᴛ ꜱᴘᴇᴇᴅ' },
+      { title: 'alive', id: 'alive', description: 'ᴄʜᴇᴄᴋ ʙᴏᴛ ᴀʟɪᴠᴇ' },
+      { title: 'owner', id: 'owner', description: 'ɢᴇᴛ ᴏᴡɴᴇʀ ɪɴꜰᴏ' },
     ],
   },
   {
     title: '𝐃𝐰𝐧 𝐂𝐦𝐝𝐳',
     rows: [
-      { title: 'song',  id: '.song',  description: 'ᴅᴏᴡɴʟᴏᴀᴅ ꜱᴏɴɢ' },
-      { title: 'video', id: '.video', description: 'ᴅᴏᴡɴʟᴏᴀᴅ ᴠɪᴅᴇᴏ' },
-      { title: 'fb',    id: '.fb',    description: 'ᴅᴏᴡɴʟᴏᴀᴅ ꜰʙ ᴠɪᴅᴇᴏ' },
-      { title: 'tt',    id: '.tt',    description: 'ᴅᴏᴡɴʟᴏᴀᴅ ᴛᴛ ᴠɪᴅᴇᴏ' },
+      { title: 'song',  id: 'song',  description: 'ᴅᴏᴡɴʟᴏᴀᴅ ꜱᴏɴɢ' },
+      { title: 'video', id: 'video', description: 'ᴅᴏᴡɴʟᴏᴀᴅ ᴠɪᴅᴇᴏ' },
+      { title: 'fb',    id: 'fb',    description: 'ᴅᴏᴡɴʟᴏᴀᴅ ꜰʙ ᴠɪᴅᴇᴏ' },
+      { title: 'tt',    id: 'tt',    description: 'ᴅᴏᴡɴʟᴏᴀᴅ ᴛᴛ ᴠɪᴅᴇᴏ' },
     ],
   },
   {
     title: '𝐓𝐨𝐨𝐥 𝐂𝐦𝐝𝐳',
     rows: [
-      { title: 'vv',      id: '.vv',      description: 'ᴅᴇᴄʀʏᴘᴛ ᴏɴᴇ ᴛɪᴍᴇ ꜰɪʟᴇ' },
-      { title: 'sticker', id: '.sticker', description: 'ᴄᴏɴᴠᴇʀᴛ ᴛᴏ ꜱᴛᴋ' },
-      { title: 'fancy',   id: '.fancy',   description: 'ᴄᴏɴᴠᴇʀᴛ ᴛᴏ ꜰᴀɴᴄʏ ᴛᴇxᴛ' },
-      { title: 'getdp',   id: '.getdp',   description: 'ɢᴇᴛ ᴡʜ ᴘʀᴏꜰɪʟᴇ ᴘʜᴏᴛᴏ' },
-      { title: 'npm',     id: '.npm',     description: 'ꜱᴇᴀʀᴄʜ ɴᴘᴍ ᴘᴋɢꜱ' },
-      { title: 'img',     id: '.img',     description: 'ꜱᴇᴀʀᴄʜ ɪᴍɢꜱ' },
-      { title: 'mode',    id: '.mode',    description: 'ᴄʜᴀɴɢᴇ ʙᴏᴛ ᴍᴏᴅᴇ' },
+      { title: 'vv',      id: 'vv',      description: 'ᴅᴇᴄʀʏᴘᴛ ᴏɴᴇ ᴛɪᴍᴇ ꜰɪʟᴇ' },
+      { title: 'sticker', id: 'sticker', description: 'ᴄᴏɴᴠᴇʀᴛ ᴛᴏ ꜱᴛᴋ' },
+      { title: 'fancy',   id: 'fancy',   description: 'ᴄᴏɴᴠᴇʀᴛ ᴛᴏ ꜰᴀɴᴄʏ ᴛᴇxᴛ' },
+      { title: 'getdp',   id: 'getdp',   description: 'ɢᴇᴛ ᴡʜ ᴘʀᴏꜰɪʟᴇ ᴘʜᴏᴛᴏ' },
+      { title: 'npm',     id: 'npm',     description: 'ꜱᴇᴀʀᴄʜ ɴᴘᴍ ᴘᴋɢꜱ' },
+      { title: 'img',     id: 'img',     description: 'ꜱᴇᴀʀᴄʜ ɪᴍɢꜱ' },
+      { title: 'mode',    id: 'mode',    description: 'ᴄʜᴀɴɢᴇ ʙᴏᴛ ᴍᴏᴅᴇ' },
     ],
   },
   {
     title: '𝐆𝐫𝐨𝐮𝐩 𝐂𝐦𝐝𝐳',
     rows: [
-      { title: 'tagall',      id: '.tagall',      description: 'ᴛᴀɢᴀʟʟ ᴍᴇᴍʙᴇʀꜱ' },
-      { title: 'hidetag',     id: '.hidetag',     description: 'ᴛᴀɢᴀʟʟ ᴍᴇᴍʙᴇʀꜱ ꜱɪʟᴇɴᴛʟʏ' },
-      { title: 'add',         id: '.add',         description: 'ᴀᴅᴅ ᴍᴇᴍʙᴇʀ' },
-      { title: 'kick',        id: '.kick',        description: 'ᴋɪᴄᴋ ᴍᴇᴍʙᴇʀ' },
-      { title: 'tagadmin',    id: '.tagadmin',    description: 'ᴛᴀɢ ᴀʟʟ ᴀᴅᴍɪɴꜱ' },
-      { title: 'promote',     id: '.promote',     description: 'ᴍᴀᴋᴇ ɢʀᴏᴜᴘ ᴀᴅᴍɪɴ' },
-      { title: 'demote',      id: '.demote',      description: 'ᴅɪꜱᴍɪꜱꜱ ɢʀᴏᴜᴘ ᴀᴅᴍɪɴ' },
-      { title: 'lockgroup',   id: '.lockgroup',   description: 'ʟᴏᴄᴋ ᴛʜᴇ ɢʀᴏᴜᴘ' },
-      { title: 'unlockgroup', id: '.unlockgroup', description: 'ᴜɴʟᴏᴄᴋ ᴛʜᴇ ɢʀᴏᴜᴘ' },
-      { title: 'mute',        id: '.mute',        description: 'ᴍᴜᴛᴇ ᴛʜᴇ ɢʀᴏᴜᴘ' },
-      { title: 'unmute',      id: '.unmute',      description: 'ᴜɴᴍᴜᴛᴇ ᴛʜᴇ ɢʀᴏᴜᴘ' },
-      { title: 'setname',     id: '.setname',     description: 'ꜱᴇᴛ ɢʀᴏᴜᴘ ɴᴀᴍᴇ' },
-      { title: 'setdesc',     id: '.setdesc',     description: 'ꜱᴇᴛ ɢʀᴏᴜᴘ ᴅᴇꜱᴄ' },
+      { title: 'tagall',      id: 'tagall',      description: 'ᴛᴀɢᴀʟʟ ᴍᴇᴍʙᴇʀꜱ' },
+      { title: 'hidetag',     id: 'hidetag',     description: 'ᴛᴀɢᴀʟʟ ᴍᴇᴍʙᴇʀꜱ ꜱɪʟᴇɴᴛʟʏ' },
+      { title: 'add',         id: 'add',         description: 'ᴀᴅᴅ ᴍᴇᴍʙᴇʀ' },
+      { title: 'kick',        id: 'kick',        description: 'ᴋɪᴄᴋ ᴍᴇᴍʙᴇʀ' },
+      { title: 'tagadmin',    id: 'tagadmin',    description: 'ᴛᴀɢ ᴀʟʟ ᴀᴅᴍɪɴꜱ' },
+      { title: 'promote',     id: 'promote',     description: 'ᴍᴀᴋᴇ ɢʀᴏᴜᴘ ᴀᴅᴍɪɴ' },
+      { title: 'demote',      id: 'demote',      description: 'ᴅɪꜱᴍɪꜱꜱ ɢʀᴏᴜᴘ ᴀᴅᴍɪɴ' },
+      { title: 'lockgroup',   id: 'lockgroup',   description: 'ʟᴏᴄᴋ ᴛʜᴇ ɢʀᴏᴜᴘ' },
+      { title: 'unlockgroup', id: 'unlockgroup', description: 'ᴜɴʟᴏᴄᴋ ᴛʜᴇ ɢʀᴏᴜᴘ' },
+      { title: 'mute',        id: 'mute',        description: 'ᴍᴜᴛᴇ ᴛʜᴇ ɢʀᴏᴜᴘ' },
+      { title: 'unmute',      id: 'unmute',      description: 'ᴜɴᴍᴜᴛᴇ ᴛʜᴇ ɢʀᴏᴜᴘ' },
+      { title: 'setname',     id: 'setname',     description: 'ꜱᴇᴛ ɢʀᴏᴜᴘ ɴᴀᴍᴇ' },
+      { title: 'setdesc',     id: 'setdesc',     description: 'ꜱᴇᴛ ɢʀᴏᴜᴘ ᴅᴇꜱᴄ' },
       { title: 'seticon',     id: 'seticon',     description: 'ꜱᴇᴛ ɢʀᴏᴜᴘ ɪᴄᴏɴ' },
-      { title: 'linkgroup',   id: '.linkgroup',   description: 'ɢᴇᴛ ɢʀᴏᴜᴘ ʟɪɴᴋ' },
-      { title: 'revokelink',  id: '.revokelink',  description: 'ʀᴇꜱᴇᴛ ɢʀᴏᴜᴘ ʟɪɴᴋ' },
-      { title: 'leave',       id: '.leave',       description: 'ʟᴇᴀᴠᴇ ᴛʜᴇ ɢʀᴏᴜᴘ' },
+      { title: 'linkgroup',   id: 'linkgroup',   description: 'ɢᴇᴛ ɢʀᴏᴜᴘ ʟɪɴᴋ' },
+      { title: 'revokelink',  id: 'revokelink',  description: 'ʀᴇꜱᴇᴛ ɢʀᴏᴜᴘ ʟɪɴᴋ' },
+      { title: 'leave',       id: 'leave',       description: 'ʟᴇᴀᴠᴇ ᴛʜᴇ ɢʀᴏᴜᴘ' },
     ],
   },
   {
     title: '𝐀𝐈 𝐂𝐦𝐝𝐳',
     rows: [
-      { title: 'akira', id: '.akira', description: 'ᴀᴋɪʀᴀ ᴀɪ ɢɪʀʟꜰʀɪᴇɴᴅ' },
+      { title: 'akira', id: 'akira', description: 'ᴀᴋɪʀᴀ ᴀɪ ɢɪʀʟꜰʀɪᴇɴᴅ' },
     ],
   },
   {
     title: '𝐅𝐮𝐧 𝐂𝐦𝐝𝐳',
     rows: [
-      { title: 'lvcal',  id: '.lvcal',  description: 'ʟᴏᴠᴇ ᴄᴀʟᴄᴜʟᴀᴛᴏʀ' },
-      { title: 'hentai', id: '.hentai', description: 'ɢᴇᴛ ʜᴇɴᴛᴀɪ ᴠɪᴅᴇᴏ (18+)' },
-      { title: 'hack',   id: '.hack',   description: 'ꜱᴇɴᴅ ʜᴀᴄᴋɪɴɢ ᴍꜱɢ' },
+      { title: 'lvcal',  id: 'lvcal',  description: 'ʟᴏᴠᴇ ᴄᴀʟᴄᴜʟᴀᴛᴏʀ' },
+      { title: 'hentai', id: 'hentai', description: 'ɢᴇᴛ ʜᴇɴᴛᴀɪ ᴠɪᴅᴇᴏ (18+)' },
+      { title: 'hack',   id: 'hack',   description: 'ꜱᴇɴᴅ ʜᴀᴄᴋɪɴɢ ᴍꜱɢ' },
     ],
   },
 ];
@@ -107,7 +107,7 @@ function buildFallbackText(pushname, slDate, slTimeNow) {
   for (const cat of CATEGORIES) {
     body += `\n╭─⊹₊⟡⋆『 \`${cat.title}\` 』𖤐\n`;
     for (const r of cat.rows) {
-      body += `│₊❏❜ ⋮ •${r.id} ➜ ${r.description}\n`;
+      body += `│₊❏❜ ⋮ ${PREFIX}${r.id} ➜ ${r.description}\n`;
     }
     body += `╰──────────────────<𝟑 \n`;
   }
