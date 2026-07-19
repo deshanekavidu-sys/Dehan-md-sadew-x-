@@ -1,66 +1,67 @@
+/*
+  cmd/shortlink.js
+  URL shortener using WhiteShadow API
+  Exposes: shortlink
+*/
+
 const axios = require('axios');
 
 module.exports = {
   name: 'shortlink',
-  aliases: ['short', 'url'],
+  aliases: ['short', 'shorten'],
   execute: async (ctx) => {
     const {
       socket,
       msg,
       sender,
+      quoted,
       text,
       arabianCtx,
-      akira,
       prefix
     } = ctx;
 
-    // React with an emoji to show processing
     try { await socket.sendMessage(sender, { react: { text: '🔗', key: msg.key } }); } catch (_) {}
 
-    // Check if URL is provided
-    if (!text) {
-      return await socket.sendMessage(sender, { 
-        text: `❌ කරුණාකර කෙටි කිරීමට අවශ්‍ය URL එක ඇතුළත් කරන්න.\nExample: *${prefix}shortlink https://github.com*` 
+    const url = text?.trim();
+
+    if (!url) {
+      return socket.sendMessage(sender, {
+        text: `*⚠️ Usage:* ${prefix}shortlink <url>\n*Example:* ${prefix}shortlink kadiya-md-production.up.railway.app`,
+        contextInfo: arabianCtx()
+      }, { quoted: msg });
+    }
+
+    if (!/^https?:\/\//i.test(url)) {
+      return socket.sendMessage(sender, {
+        text: `*⚠️ Invalid URL.* Make sure it starts with http:// or https://`,
+        contextInfo: arabianCtx()
       }, { quoted: msg });
     }
 
     try {
-      // API call to shorten the URL
-      const apiUrl = `https://whiteshadow-x-api.onrender.com/api/tools/shortlink?url=${encodeURIComponent(text)}&apitoken=aWK0z4`;
-      const response = await axios.get(apiUrl);
-      const data = response.data;
+      const apiUrl = `https://whiteshadow-x-api.onrender.com/api/tools/shortlink?url=${encodeURIComponent(url)}&apitoken=aWK0z4`;
+      const { data } = await axios.get(apiUrl, { timeout: 15000 });
 
-      if (data.success) {
-        const title = '*↳ ❝ [🎀 𝗨𝗥𝗟 𝗦𝗵𝗼𝗿𝘁𝗲𝗻𝗲𝗿 🎀] ¡! ❞*';
-        const content = `*⊹₊⟡⋆ ⋮ Ｌｉｎｋ Ｉｎｆｏ ᶻ 𝗓 𐰁 .ᐟ*\n` +
-                        `➜ *Original URL:* ${data.original_url}\n` +
-                        `➜ *Short URL:* ${data.short_url}\n\n` +
-                        `*⊹₊⟡⋆ ⋮ Ｃｒｅａｔｏｒ ᶻ 𝗓 𐰁 .ᐟ*\n` +
-                        `➜ *By:* ${data.creator}`;
-        const footer = '> *𝗔esthatic 𝗤ueen 𝗕y 𝗜sanka ⋆*';
-
-        const buttons = [
-          { buttonId: `${prefix}menu`, buttonText: { displayText: '📜 Menu' }, type: 1 }
-        ];
-
-        // Send the response with image and buttons
-        await socket.sendMessage(sender, {
-            image: { url: akira },
-            caption: `${title}\n\n${content}\n\n${footer}`,
-            footer: footer,
-            buttons,
-            headerType: 4,
-            contextInfo: arabianCtx()
-        }, { quoted: msg });
-
-      } else {
-        await socket.sendMessage(sender, { text: '❌ URL එක කෙටි කිරීමට නොහැකි විය. කරුණාකර නැවත උත්සාහ කරන්න.' }, { quoted: msg });
+      if (!data?.success || !data?.short_url) {
+        throw new Error('API returned no short_url');
       }
 
-    } catch (error) {
-      console.error(error);
-      await socket.sendMessage(sender, { text: '❌ API එක සම්බන්ධ කර ගැනීමේදී දෝෂයක් ඇති විය.' }, { quoted: msg });
+      const responseText =
+        `*↳ ❝ [🔗 𝗨𝗥𝗟 𝗦𝗵𝗼𝗿𝘁𝗲𝗻𝗲𝗿 🔗] ¡! ❞*\n\n` +
+        `*⊹₊⟡⋆ Original:* ${data.original_url}\n` +
+        `*⊹₊⟡⋆ Short:* ${data.short_url}\n\n` +
+        `> *𝗔esthatic 𝗤ueen 𝗕y 𝗜sanka ⋆*`;
+
+      await socket.sendMessage(sender, {
+        text: responseText,
+        contextInfo: arabianCtx()
+      }, { quoted: msg });
+
+    } catch (err) {
+      await socket.sendMessage(sender, {
+        text: `*❌ Shorten fail ununa.* Try again later.\n_${err.message}_`,
+        contextInfo: arabianCtx()
+      }, { quoted: msg });
     }
   }
 };
-
